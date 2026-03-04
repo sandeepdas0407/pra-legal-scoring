@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <p class="hero-eyebrow">Legal Recovery Intelligence</p>
+    <h1 class="hero-title">Legal Scoring<br/>Dashboard</h1>
+    <p class="hero-sub">Evaluate account viability for legal action using a data-driven scoring model across six key recovery factors.</p>
+    <a href="{{ url_for('new_score') }}" class="btn-primary">Score a New Account</a>
+  </div>
+</section>
+
+<!-- STATS STRIP -->
+<section class="stats-strip">
+  <div class="container stats-grid">
+    <div class="stat-card">
+      <span class="stat-num">{{ stats.total }}</span>
+      <span class="stat-label">Total Accounts</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num">{{ stats.scored }}</span>
+      <span class="stat-label">Scored</span>
+    </div>
+    <div class="stat-card stat-high">
+      <span class="stat-num">{{ stats.high }}</span>
+      <span class="stat-label">High Priority</span>
+    </div>
+    <div class="stat-card stat-medium">
+      <span class="stat-num">{{ stats.medium }}</span>
+      <span class="stat-label">Medium Priority</span>
+    </div>
+    <div class="stat-card stat-low">
+      <span class="stat-num">{{ stats.low }}</span>
+      <span class="stat-label">Low Priority</span>
+    </div>
+  </div>
+</section>
+
+<!-- ACCOUNT TABLE -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Account Portfolio</h2>
+      <a href="{{ url_for('new_score') }}" class="btn-outline">+ Add Account</a>
+    </div>
+
+    {% if accounts %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Account #</th>
+            <th>Debtor Name</th>
+            <th>Balance</th>
+            <th>Age (days)</th>
+            <th>State</th>
+            <th>Legal Score</th>
+            <th>Recommendation</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for acct in accounts %}
+          <tr>
+            <td class="mono">{{ acct.account_number }}</td>
+            <td>{{ acct.debtor_name }}</td>
+            <td>${{ "{:,.2f}".format(acct.debt_amount) }}</td>
+            <td>{{ acct.debt_age_days }}</td>
+            <td>{{ acct.state }}</td>
+            <td class="text-center">
+              {% if acct.legal_score is not none %}
+                <span class="score-badge score-{{ 'high' if acct.legal_score >= 70 else ('medium' if acct.legal_score >= 40 else 'low') }}">
+                  {{ acct.legal_score }}
+                </span>
+              {% else %}
+                <span class="score-badge score-none">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if acct.recommendation %}
+                <span class="rec-pill rec-{{ 'high' if acct.recommendation == 'High Priority' else ('medium' if acct.recommendation == 'Medium Priority' else 'low') }}">
+                  {{ acct.recommendation }}
+                </span>
+              {% else %}
+                <span class="rec-pill rec-none">Not Scored</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if acct.legal_score is not none %}
+                <a href="{{ url_for('result', account_id=acct.id) }}" class="tbl-link">View</a>
+              {% else %}
+                <form method="POST" action="{{ url_for('rescore', account_id=acct.id) }}" style="display:inline">
+                  <button type="submit" class="tbl-btn">Score Now</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="empty-state">
+        <p>No accounts yet. <a href="{{ url_for('new_score') }}">Score your first account</a>.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section section-dark">
+  <div class="container">
+    <h2 class="section-title text-center">How Legal Scoring Works</h2>
+    <p class="section-sub text-center">Six weighted factors combine to produce a 0–100 score that guides legal action decisions.</p>
+    <div class="factors-grid">
+      <div class="factor-card">
+        <div class="factor-icon">$</div>
+        <h3>Debt Amount</h3>
+        <p>Higher balances justify litigation costs and attorney fees. Accounts above $25k receive full weight.</p>
+        <span class="factor-weight">30 pts</span>
+      </div>
+      <div class="factor-card">
+        <div class="factor-icon">⏱</div>
+        <h3>Debt Age</h3>
+        <p>Fresher debts are more collectible. Older debts risk statute-of-limitations expiry.</p>
+        <span class="factor-weight">20 pts</span>
+      </div>
+      <div class="factor-card">
+        <div class="factor-icon">⭐</div>
+        <h3>Credit Score</h3>
+        <p>Indicates the debtor's financial capacity. Higher scores suggest greater ability to satisfy judgments.</p>
+        <span class="factor-weight">20 pts</span>
+      </div>
+      <div class="factor-card">
+        <div class="factor-icon">💼</div>
+        <h3>Employment</h3>
+        <p>Employed debtors have wages that can be garnished post-judgment, increasing recovery odds.</p>
+        <span class="factor-weight">15 pts</span>
+      </div>
+      <div class="factor-card">
+        <div class="factor-icon">🏠</div>
+        <h3>Asset Ownership</h3>
+        <p>Assets provide lien and levy opportunities, enabling collection beyond wage garnishment.</p>
+        <span class="factor-weight">10 pts</span>
+      </div>
+      <div class="factor-card">
+        <div class="factor-icon">✓</div>
+        <h3>Prior Payment</h3>
+        <p>Previous partial payments signal debtor's willingness to resolve the obligation.</p>
+        <span class="factor-weight">5 pts</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

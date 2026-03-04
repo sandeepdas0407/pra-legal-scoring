@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Score New Account{% endblock %}
+
+{% block scripts %}
+<script>window.SCORING_RULES = {{ rules_json | safe }};</script>
+{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+  <div class="container">
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+    <h1 class="page-title">Score New Account</h1>
+    <p class="page-sub">Enter the account details below. All fields are required to generate an accurate legal score.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container form-container">
+
+    <form method="POST" action="{{ url_for('new_score') }}" id="scoreForm" novalidate>
+
+      <!-- SECTION: Account Identification -->
+      <div class="form-section">
+        <h2 class="form-section-title">Account Identification</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="account_number">Account Number <span class="req">*</span></label>
+            <input type="text" id="account_number" name="account_number"
+                   placeholder="e.g. PRA-2024-011"
+                   value="{{ form.get('account_number', '') }}" required />
+          </div>
+          <div class="form-group">
+            <label for="debtor_name">Debtor Full Name <span class="req">*</span></label>
+            <input type="text" id="debtor_name" name="debtor_name"
+                   placeholder="e.g. John A. Smith"
+                   value="{{ form.get('debtor_name', '') }}" required />
+          </div>
+          <div class="form-group">
+            <label for="state">State <span class="req">*</span></label>
+            <select id="state" name="state" required>
+              <option value="">— Select State —</option>
+              {% for s in states %}
+                <option value="{{ s }}" {% if form.get('state') == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: Debt Information -->
+      <div class="form-section">
+        <h2 class="form-section-title">Debt Information</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="debt_amount">Outstanding Balance ($) <span class="req">*</span></label>
+            <input type="number" id="debt_amount" name="debt_amount"
+                   placeholder="e.g. 12500.00" min="1" step="0.01"
+                   value="{{ form.get('debt_amount', '') }}" required />
+            <span class="field-hint">Scoring weight: up to 30 pts</span>
+          </div>
+          <div class="form-group">
+            <label for="debt_age_days">Debt Age (days) <span class="req">*</span></label>
+            <input type="number" id="debt_age_days" name="debt_age_days"
+                   placeholder="e.g. 180" min="1" max="3650"
+                   value="{{ form.get('debt_age_days', '') }}" required />
+            <span class="field-hint">Days since last payment or charge-off. Scoring weight: up to 20 pts</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: Debtor Profile -->
+      <div class="form-section">
+        <h2 class="form-section-title">Debtor Profile</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="credit_score">Credit Score (300–850) <span class="req">*</span></label>
+            <input type="number" id="credit_score" name="credit_score"
+                   placeholder="e.g. 640" min="300" max="850"
+                   value="{{ form.get('credit_score', '') }}" required />
+            <span class="field-hint">Scoring weight: up to 20 pts</span>
+          </div>
+          <div class="form-group">
+            <label for="employment_status">Employment Status <span class="req">*</span></label>
+            <select id="employment_status" name="employment_status" required>
+              <option value="">— Select —</option>
+              {% for status in ["Employed", "Self-Employed", "Unemployed"] %}
+                <option value="{{ status }}" {% if form.get('employment_status') == status %}selected{% endif %}>{{ status }}</option>
+              {% endfor %}
+            </select>
+            <span class="field-hint">Scoring weight: up to 15 pts</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group form-group-check">
+            <label class="check-label">
+              <input type="hidden" name="owns_assets" value="0" />
+              <input type="checkbox" name="owns_assets" value="1"
+                     {% if form.get('owns_assets') == '1' %}checked{% endif %} />
+              <span class="check-text">
+                <strong>Owns Identifiable Assets</strong>
+                <small>Property, vehicle, bank accounts, or other seizable assets</small>
+              </span>
+            </label>
+            <span class="field-hint">Scoring weight: 10 pts</span>
+          </div>
+          <div class="form-group form-group-check">
+            <label class="check-label">
+              <input type="hidden" name="prior_payment" value="0" />
+              <input type="checkbox" name="prior_payment" value="1"
+                     {% if form.get('prior_payment') == '1' %}checked{% endif %} />
+              <span class="check-text">
+                <strong>Prior Payment History</strong>
+                <small>Debtor has made at least one payment on this account</small>
+              </span>
+            </label>
+            <span class="field-hint">Scoring weight: 5 pts</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE PREVIEW -->
+      <div class="score-preview" id="scorePreview">
+        <div class="preview-label">Estimated Score</div>
+        <div class="preview-score" id="previewScore">—</div>
+        <div class="preview-rec" id="previewRec">Fill in the form to see an estimate</div>
+      </div>
+
+      <div class="form-actions">
+        <a href="{{ url_for('dashboard') }}" class="btn-ghost">Cancel</a>
+        <button type="submit" class="btn-primary">Generate Legal Score</button>
+      </div>
+
+    </form>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Legal Scoring{% endblock %} | PRA Legal Recovery</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="{{ url_for('dashboard') }}" class="logo">
+        <span class="logo-pra">PRA</span>
+        <span class="logo-sub">Legal Recovery</span>
+      </a>
+      <nav class="main-nav">
+        <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">Dashboard</a>
+        <a href="{{ url_for('accounts_list') }}" class="nav-link {% if request.endpoint == 'accounts_list' %}active{% endif %}">Accounts</a>
+        <a href="{{ url_for('rule_engine') }}" class="nav-link {% if request.endpoint == 'rule_engine' %}active{% endif %}">Rule Engine</a>
+        <a href="{{ url_for('new_score') }}" class="nav-btn">+ Score Account</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- FLASH MESSAGES -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- PAGE CONTENT -->
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p class="footer-brand">PRA Legal Recovery Platform</p>
+      <p class="footer-copy">&copy; 2024 PRA Group. Internal Use Only.</p>
+    </div>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

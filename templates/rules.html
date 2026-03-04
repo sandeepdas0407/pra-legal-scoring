@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Rule Engine{% endblock %}
+
+{% block content %}
+<div id="rules-page"></div>
+
+<section class="page-hero">
+  <div class="container">
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+    <h1 class="page-title">Score Rule Engine</h1>
+    <p class="page-sub">Configure scoring weights and thresholds. Changes are versioned and take effect immediately on all future scores.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+
+    <div id="rules-error" class="flash flash-error" style="display:none; margin-bottom:16px;"></div>
+
+    <div class="rules-layout">
+
+      <!-- ── MAIN COLUMN ──────────────────────────────────────── -->
+      <div class="rules-main">
+
+        <!-- Ruleset Name -->
+        <div class="rule-card rule-card-name">
+          <label for="ruleset-name" class="rule-section-label">Ruleset Name</label>
+          <input type="text" id="ruleset-name" class="ruleset-name-input"
+                 value="{{ active_name }}"
+                 placeholder="e.g. Q2 2024 Aggressive" />
+        </div>
+
+        <!-- Score Band Thresholds -->
+        <div class="rule-card">
+          <div class="rule-card-header">
+            <div class="rule-card-title-group">
+              <span class="rule-label">Score Band Thresholds</span>
+              <span class="badge-type badge-bands">bands</span>
+            </div>
+          </div>
+          <div class="bands-grid">
+            <div class="band-row">
+              <span class="band-dot band-high"></span>
+              <span class="band-name">High Priority</span>
+              <span class="band-op">≥</span>
+              <input type="number" id="high_min" class="band-input" min="1" max="99"
+                     value="{{ rules.score_bands.high_min }}" />
+              <span class="band-unit">pts</span>
+            </div>
+            <div class="band-row">
+              <span class="band-dot band-medium"></span>
+              <span class="band-name">Medium Priority</span>
+              <span class="band-op">≥</span>
+              <input type="number" id="med_min" class="band-input" min="1" max="99"
+                     value="{{ rules.score_bands.medium_min }}" />
+              <span class="band-unit">pts</span>
+            </div>
+            <div class="band-row">
+              <span class="band-dot band-low"></span>
+              <span class="band-name">Low Priority</span>
+              <span class="band-op">&lt;</span>
+              <span class="band-derived" id="low-threshold">{{ rules.score_bands.medium_min }}</span>
+              <span class="band-unit">pts</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Factor Cards -->
+        {% for factor in rules.factors %}
+        <div class="rule-card"
+             data-key="{{ factor.key }}"
+             data-type="{{ factor.type }}"
+             data-label="{{ factor.label }}"
+             data-max-pts="{{ factor.max_pts }}">
+
+          <div class="rule-card-header">
+            <div class="rule-card-title-group">
+              <span class="rule-label">{{ factor.label }}</span>
+              {% if factor.type == 'tiered_gte' %}
+                <span class="badge-type badge-tiered">tiered ≥</span>
+              {% elif factor.type == 'tiered_lte' %}
+                <span class="badge-type badge-tiered">tiered ≤</span>
+              {% elif factor.type == 'categorical' %}
+                <span class="badge-type badge-categorical">categorical</span>
+              {% else %}
+                <span class="badge-type badge-boolean">boolean</span>
+              {% endif %}
+            </div>
+            <div class="rule-weight-display">
+              <span class="weight-val" id="weight-{{ factor.key }}">{{ factor.max_pts }}</span>
+              <span class="weight-label">pts max</span>
+            </div>
+          </div>
+
+          {% if factor.type == 'tiered_gte' or factor.type == 'tiered_lte' %}
+          <table class="tier-table">
+            <thead>
+              <tr>
+                <th>
+                  {% if factor.key == 'debt_amount' %}Threshold ($)
+                  {% elif factor.key == 'debt_age' %}Threshold (days)
+                  {% elif factor.key == 'credit_score' %}Credit Score
+                  {% else %}Threshold{% endif %}
+                </th>
+                <th>Points</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody class="tier-tbody" id="tier-tbody-{{ factor.key }}">
+              {% for tier in factor.tiers %}
+              <tr>
+                <td><input type="number" class="tier-threshold tier-input" value="{{ tier.threshold }}" min="0" oninput="updateCardWeight(this)" /></td>
+                <td><input type="number" class="tier-pts tier-input" value="{{ tier.pts }}" min="0" max="999" oninput="updateCardWeight(this)" /></td>
+                <td><button type="button" class="tier-remove" onclick="removeTier(this)" title="Remove tier">&times;</button></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <button type="button" class="btn-add-tier" onclick="addTier('{{ factor.key }}')">+ Add Tier</button>
+
+          {% elif factor.type == 'categorical' %}
+          <table class="tier-table">
+            <thead>
+              <tr><th>Category</th><th>Points</th></tr>
+            </thead>
+            <tbody class="cat-tbody" id="cat-tbody-{{ factor.key }}">
+              {% for val in factor['values'] %}
+              <tr>
+                <td>
+                  <span class="cat-label-text">{{ val.label }}</span>
+                  <input type="hidden" class="cat-label" value="{{ val.label }}" />
+                </td>
+                <td><input type="number" class="cat-pts tier-input" value="{{ val.pts }}" min="0" max="999" oninput="updateCardWeight(this)" /></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          {% elif factor.type == 'boolean' %}
+          <div class="boolean-field">
+            <label class="boolean-label">Points if Yes</label>
+            <input type="number" class="bool-pts tier-input" value="{{ factor.max_pts }}"
+                   min="0" max="999" oninput="updateCardWeight(this)" />
+          </div>
+          {% endif %}
+
+        </div>
+        {% endfor %}
+
+      </div><!-- /.rules-main -->
+
+      <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+      <aside class="rules-sidebar">
+
+        <!-- Total Weight Meter -->
+        <div class="sidebar-card">
+          <h3 class="sidebar-title">Total Weight</h3>
+          <div id="weight-wrap" class="weight-meter-wrap">
+            <div class="weight-meter-bar">
+              <div class="weight-meter-fill" id="weight-fill"></div>
+            </div>
+            <div class="weight-meter-label">
+              <span id="total-weight">0</span>
+              <span class="weight-of">&thinsp;/ 100 pts</span>
+            </div>
+          </div>
+          <p class="weight-hint">Weights should sum to 100 for a balanced model.</p>
+        </div>
+
+        <!-- Save Button -->
+        <div class="sidebar-card">
+          <button id="save-rules-btn" class="btn-primary" style="width:100%">Save Rules</button>
+          <p class="weight-hint" style="margin-top:10px;">Saving creates a new version and activates it immediately.</p>
+        </div>
+
+        <!-- Rule History -->
+        <div class="sidebar-card">
+          <h3 class="sidebar-title">Rule History</h3>
+          {% if history %}
+          <ul class="history-list">
+            {% for h in history %}
+            <li class="history-item {% if h.is_active %}history-active{% endif %}">
+              <div class="history-item-header">
+                <span class="history-name">{{ h.rule_name }}</span>
+                {% if h.is_active %}<span class="history-badge-active">Active</span>{% endif %}
+              </div>
+              <div class="history-meta">{{ h.created_at[:16] if h.created_at else '—' }}</div>
+              {% if not h.is_active %}
+              <button type="button" class="activate-btn btn-outline" data-rule-id="{{ h.id }}"
+                      style="margin-top:8px; font-size:0.78rem; padding:5px 12px;">
+                Activate
+              </button>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="weight-hint">No history yet.</p>
+          {% endif %}
+        </div>
+
+      </aside>
+
+    </div><!-- /.rules-layout -->
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Score Result — {{ account.account_number }}{% endblock %}
+
+{% block content %}
+
+<!-- RESULT HERO -->
+<section class="result-hero result-hero-{{ result.band }}">
+  <div class="container">
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+    <div class="result-hero-inner">
+      <div class="result-meta">
+        <p class="result-acct-num">{{ account.account_number }}</p>
+        <h1 class="result-name">{{ account.debtor_name }}</h1>
+        <p class="result-location">{{ account.state }} &nbsp;·&nbsp; Balance: ${{ "{:,.2f}".format(account.debt_amount) }}</p>
+        <div class="rec-badge rec-badge-{{ result.band }}">
+          {{ result.recommendation }} — {{ result.rec_detail }}
+        </div>
+      </div>
+      <div class="score-dial-wrap">
+        <div class="score-dial score-dial-{{ result.band }}">
+          <span class="dial-num">{{ result.legal_score }}</span>
+          <span class="dial-label">/ 100</span>
+        </div>
+        <p class="dial-caption">Legal Score</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BREAKDOWN -->
+<section class="section">
+  <div class="container result-grid">
+
+    <!-- Scoring Breakdown -->
+    <div class="result-card">
+      <h2 class="card-title">Score Breakdown</h2>
+      <div class="breakdown-list">
+        {% for factor, vals in result.breakdown.items() %}
+        <div class="breakdown-item">
+          <div class="breakdown-header">
+            <span class="breakdown-name">{{ factor }}</span>
+            <span class="breakdown-pts">{{ vals.score }} / {{ vals.max }}</span>
+          </div>
+          <div class="breakdown-bar-bg">
+            <div class="breakdown-bar" style="width: {{ (vals.score / vals.max * 100) | int }}%"></div>
+          </div>
+          <span class="breakdown-detail">{{ vals.detail }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Account Details -->
+    <div class="result-card">
+      <h2 class="card-title">Account Details</h2>
+      <table class="detail-table">
+        <tr><th>Account Number</th><td class="mono">{{ account.account_number }}</td></tr>
+        <tr><th>Debtor Name</th><td>{{ account.debtor_name }}</td></tr>
+        <tr><th>State</th><td>{{ account.state }}</td></tr>
+        <tr><th>Outstanding Balance</th><td>${{ "{:,.2f}".format(account.debt_amount) }}</td></tr>
+        <tr><th>Debt Age</th><td>{{ account.debt_age_days }} days</td></tr>
+        <tr><th>Credit Score</th><td>{{ account.credit_score }}</td></tr>
+        <tr><th>Employment Status</th><td>{{ account.employment_status }}</td></tr>
+        <tr><th>Asset Ownership</th><td>{{ "Yes" if account.owns_assets else "No" }}</td></tr>
+        <tr><th>Prior Payment</th><td>{{ "Yes" if account.prior_payment else "No" }}</td></tr>
+      </table>
+
+      <!-- Score Guide -->
+      <div class="score-guide">
+        <h3>Score Interpretation</h3>
+        <div class="guide-row {% if result.legal_score >= 70 %}guide-active{% endif %}">
+          <span class="guide-range high-text">70–100</span>
+          <span>High Priority — Recommend Legal Action</span>
+        </div>
+        <div class="guide-row {% if 40 <= result.legal_score < 70 %}guide-active{% endif %}">
+          <span class="guide-range medium-text">40–69</span>
+          <span>Medium Priority — Further Investigation</span>
+        </div>
+        <div class="guide-row {% if result.legal_score < 40 %}guide-active{% endif %}">
+          <span class="guide-range low-text">0–39</span>
+          <span>Low Priority — Legal Action Not Recommended</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Score History -->
+  {% if history | length > 1 %}
+  <div class="container" style="margin-top: 2rem;">
+    <div class="result-card">
+      <h2 class="card-title">Scoring History</h2>
+      <table class="data-table">
+        <thead>
+          <tr><th>Scored At</th><th>Legal Score</th><th>Recommendation</th></tr>
+        </thead>
+        <tbody>
+          {% for h in history %}
+          <tr>
+            <td>{{ h.scored_at }}</td>
+            <td class="text-center">
+              <span class="score-badge score-{{ 'high' if h.legal_score >= 70 else ('medium' if h.legal_score >= 40 else 'low') }}">
+                {{ h.legal_score }}
+              </span>
+            </td>
+            <td>{{ h.recommendation }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="container form-actions" style="margin-top: 2rem;">
+    <a href="{{ url_for('dashboard') }}" class="btn-ghost">← Dashboard</a>
+    <a href="{{ url_for('new_score') }}" class="btn-primary">Score Another Account</a>
+  </div>
+</section>
+
+{% endblock %}
