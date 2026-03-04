@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import score_badge, rec_pill, account_action %}
 {% block title %}All Accounts{% endblock %}
 
 {% block content %}
@@ -45,33 +46,9 @@
             <td>{{ acct.credit_score }}</td>
             <td>{{ acct.employment_status }}</td>
             <td>{{ acct.state }}</td>
-            <td class="text-center">
-              {% if acct.legal_score is not none %}
-                <span class="score-badge score-{{ 'high' if acct.legal_score >= 70 else ('medium' if acct.legal_score >= 40 else 'low') }}">
-                  {{ acct.legal_score }}
-                </span>
-              {% else %}
-                <span class="score-badge score-none">—</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if acct.recommendation %}
-                <span class="rec-pill rec-{{ 'high' if acct.recommendation == 'High Priority' else ('medium' if acct.recommendation == 'Medium Priority' else 'low') }}">
-                  {{ acct.recommendation }}
-                </span>
-              {% else %}
-                <span class="rec-pill rec-none">Not Scored</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if acct.legal_score is not none %}
-                <a href="{{ url_for('result', account_id=acct.id) }}" class="tbl-link">View</a>
-              {% else %}
-                <form method="POST" action="{{ url_for('rescore', account_id=acct.id) }}" style="display:inline">
-                  <button type="submit" class="tbl-btn">Score Now</button>
-                </form>
-              {% endif %}
-            </td>
+            <td class="text-center">{{ score_badge(acct.legal_score) }}</td>
+            <td>{{ rec_pill(acct.recommendation) }}</td>
+            <td>{{ account_action(acct) }}</td>
           </tr>
           {% endfor %}
         </tbody>

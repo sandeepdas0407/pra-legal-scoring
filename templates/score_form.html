@@ -2,7 +2,10 @@
 {% block title %}Score New Account{% endblock %}
 
 {% block scripts %}
-<script>window.SCORING_RULES = {{ rules_json | safe }};</script>
+<script>
+  window.ALL_RULESETS = {{ all_rules_json | safe }};
+  window.SCORING_RULES = window.ALL_RULESETS['{{ selected_rule_id }}'] || {{ rules_json | safe }};
+</script>
 {% endblock %}
 
 {% block content %}
@@ -19,6 +22,24 @@
   <div class="container form-container">
 
     <form method="POST" action="{{ url_for('new_score') }}" id="scoreForm" novalidate>
+
+      <!-- SECTION: Scoring Ruleset -->
+      <div class="form-section">
+        <h2 class="form-section-title">Scoring Ruleset</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="rule_id">Apply Ruleset <span class="req">*</span></label>
+            <select id="rule_id" name="rule_id" onchange="onRulesetChange(this.value)">
+              {% for r in all_rulesets %}
+              <option value="{{ r.id }}" {% if r.id == selected_rule_id %}selected{% endif %}>
+                {{ r.rule_name }}{% if r.is_active %} — Active{% endif %}
+              </option>
+              {% endfor %}
+            </select>
+            <span class="field-hint">Determines the scoring weights and thresholds applied to this account.</span>
+          </div>
+        </div>
+      </div>
 
       <!-- SECTION: Account Identification -->
       <div class="form-section">

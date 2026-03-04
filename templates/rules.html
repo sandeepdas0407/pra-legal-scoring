@@ -4,6 +4,17 @@
 {% block content %}
 <div id="rules-page"></div>
 
+{% if is_new %}
+<div class="load-banner container" style="margin-top:20px;">
+  Starting a <strong>new ruleset</strong> from default values. Give it a name below and save to add it to the library.
+</div>
+{% elif loaded_id %}
+<div class="load-banner container" style="margin-top:20px;">
+  Editing a copy of <strong>{{ active_name }}</strong>.
+  Update the name below before saving to create a distinct new ruleset.
+</div>
+{% endif %}
+
 <section class="page-hero">
   <div class="container">
     <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
@@ -167,10 +178,16 @@
           <p class="weight-hint">Weights should sum to 100 for a balanced model.</p>
         </div>
 
+        <!-- New Ruleset -->
+        <div class="sidebar-card">
+          <a href="{{ url_for('rule_engine', new=1) }}" class="btn-outline" style="display:block; text-align:center; width:100%; box-sizing:border-box;">+ New Ruleset</a>
+          <p class="weight-hint" style="margin-top:10px;">Start from default values with a blank name.</p>
+        </div>
+
         <!-- Save Button -->
         <div class="sidebar-card">
-          <button id="save-rules-btn" class="btn-primary" style="width:100%">Save Rules</button>
-          <p class="weight-hint" style="margin-top:10px;">Saving creates a new version and activates it immediately.</p>
+          <button id="save-rules-btn" class="btn-primary" style="width:100%">Save &amp; Activate</button>
+          <p class="weight-hint" style="margin-top:10px;">Saves as a new named version and activates it immediately.</p>
         </div>
 
         <!-- Rule History -->
@@ -185,12 +202,14 @@
                 {% if h.is_active %}<span class="history-badge-active">Active</span>{% endif %}
               </div>
               <div class="history-meta">{{ h.created_at[:16] if h.created_at else '—' }}</div>
-              {% if not h.is_active %}
-              <button type="button" class="activate-btn btn-outline" data-rule-id="{{ h.id }}"
-                      style="margin-top:8px; font-size:0.78rem; padding:5px 12px;">
-                Activate
-              </button>
-              {% endif %}
+              <div class="history-actions">
+                <a href="{{ url_for('rule_engine', load=h.id) }}"
+                   class="btn-outline history-action-btn">Load</a>
+                {% if not h.is_active %}
+                <button type="button" class="activate-btn btn-outline history-action-btn"
+                        data-rule-id="{{ h.id }}">Activate</button>
+                {% endif %}
+              </div>
             </li>
             {% endfor %}
           </ul>

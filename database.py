@@ -1,6 +1,6 @@
 import sqlite3
-import os
 import json
+import os
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "legal_scoring.db")
 
@@ -95,6 +95,13 @@ def init_db():
             """, (data["id"], result["legal_score"], result["recommendation"],
                   json.dumps(result["breakdown"])))
 
+    # Migrate: add rule_id column to score_results if not present
+    try:
+        cur.execute("ALTER TABLE score_results ADD COLUMN rule_id INTEGER")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
+
     conn.commit()
     conn.close()
 
@@ -138,12 +145,12 @@ def create_account(data):
     return account_id
 
 
-def save_score(account_id, legal_score, recommendation, breakdown_json):
+def save_score(account_id, legal_score, recommendation, breakdown_json, rule_id=None):
     conn = get_db()
     conn.execute("""
-        INSERT INTO score_results (account_id, legal_score, recommendation, score_breakdown)
-        VALUES (?,?,?,?)
-    """, (account_id, legal_score, recommendation, breakdown_json))
+        INSERT INTO score_results (account_id, legal_score, recommendation, score_breakdown, rule_id)
+        VALUES (?,?,?,?,?)
+    """, (account_id, legal_score, recommendation, breakdown_json, rule_id))
     conn.commit()
     conn.close()
 
@@ -151,10 +158,22 @@ def save_score(account_id, legal_score, recommendation, breakdown_json):
 def get_score_history(account_id):
     conn = get_db()
     rows = conn.execute("""
-        SELECT * FROM score_results WHERE account_id = ? ORDER BY scored_at DESC
+        SELECT sr.*, COALESCE(r.rule_name, 'Default') as rule_name_used
+        FROM score_results sr
+        LEFT JOIN score_rules r ON sr.rule_id = r.id
+        WHERE sr.account_id = ?
+        ORDER BY sr.scored_at DESC
     """, (account_id,)).fetchall()
     conn.close()
     return rows
+
+
+def get_ruleset_by_id(rule_id: int):
+    """Return a ruleset dict by its id, or None if not found."""
+    conn = get_db()
+    row = conn.execute("SELECT rules_json FROM score_rules WHERE id = ?", (rule_id,)).fetchone()
+    conn.close()
+    return json.loads(row["rules_json"]) if row else None
 
 
 # ── Rule Engine helpers ──────────────────────────────────────────────────────

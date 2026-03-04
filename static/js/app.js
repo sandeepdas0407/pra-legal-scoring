@@ -5,6 +5,15 @@
  * - Rule Engine page interactions
  */
 
+// ── Ruleset switcher (called by score form dropdown) ──────────────────────────
+
+function onRulesetChange(ruleId) {
+  if (window.ALL_RULESETS && window.ALL_RULESETS[String(ruleId)]) {
+    window.SCORING_RULES = window.ALL_RULESETS[String(ruleId)];
+  }
+  estimateScore();
+}
+
 // ── Score preview helpers ─────────────────────────────────────────────────────
 
 function scoreWithRules(rules, vals) {
@@ -63,38 +72,9 @@ function estimateScore() {
   }
 
   const rules = window.SCORING_RULES;
-  let total;
+  if (!rules) return;
 
-  if (rules) {
-    total = scoreWithRules(rules, { amount, age, cs, emp, assets, prior });
-  } else {
-    // Hard-coded fallback matching default rules
-    total = 0;
-    if      (amount >= 25000) total += 30;
-    else if (amount >= 15000) total += 24;
-    else if (amount >= 8000)  total += 18;
-    else if (amount >= 3000)  total += 10;
-    else if (amount > 0)      total += 4;
-
-    if      (age > 0 && age <= 90)  total += 20;
-    else if (age <= 180)             total += 16;
-    else if (age <= 365)             total += 10;
-    else if (age <= 730)             total += 5;
-    else if (age > 730)              total += 1;
-
-    if      (cs >= 700) total += 20;
-    else if (cs >= 650) total += 16;
-    else if (cs >= 580) total += 10;
-    else if (cs >= 500) total += 5;
-    else if (cs >= 300) total += 1;
-
-    const empMap = { Employed: 15, 'Self-Employed': 10, Unemployed: 2 };
-    total += empMap[emp] || 0;
-    total += assets ? 10 : 0;
-    total += prior  ? 5  : 0;
-    total = Math.min(total, 100);
-  }
-
+  const total = scoreWithRules(rules, { amount, age, cs, emp, assets, prior });
   scoreEl.textContent = total;
 
   const bands = rules?.score_bands || { high_min: 70, medium_min: 40 };

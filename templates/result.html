@@ -92,12 +92,13 @@
       <h2 class="card-title">Scoring History</h2>
       <table class="data-table">
         <thead>
-          <tr><th>Scored At</th><th>Legal Score</th><th>Recommendation</th></tr>
+          <tr><th>Scored At</th><th>Ruleset</th><th>Legal Score</th><th>Recommendation</th></tr>
         </thead>
         <tbody>
           {% for h in history %}
           <tr>
             <td>{{ h.scored_at }}</td>
+            <td>{{ h.rule_name_used }}</td>
             <td class="text-center">
               <span class="score-badge score-{{ 'high' if h.legal_score >= 70 else ('medium' if h.legal_score >= 40 else 'low') }}">
                 {{ h.legal_score }}

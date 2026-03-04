@@ -363,7 +363,6 @@ a:hover { text-decoration: underline; }
 .data-table tbody tr:hover { background: rgba(255,255,255,0.03); }
 
 .mono { font-family: 'Courier New', monospace; font-size: 0.82rem; color: var(--gray-light); }
-.text-center { text-align: center; }
 
 /* ── Badges ────────────────────────────────────────── */
 .score-badge {
@@ -1262,6 +1261,18 @@ a:hover { text-decoration: underline; }
   font-size: 0.75rem;
   color: var(--gray);
   font-family: 'Courier New', monospace;
+}
+
+.history-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.history-action-btn { font-size: 0.78rem !important; padding: 5px 12px !important; }
+
+.load-banner {
+  background: rgba(30,111,184,0.12);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  font-size: 0.875rem;
+  color: var(--off-white);
 }
 
 /* Responsive — rules */

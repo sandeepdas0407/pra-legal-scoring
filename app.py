@@ -2,8 +2,9 @@ import json
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from database import (init_db, get_all_accounts, get_account, create_account,
                       save_score, get_score_history,
-                      get_active_rules, save_rules, activate_rules, get_rules_history)
-from scoring_engine import score_account
+                      get_active_rules, save_rules, activate_rules, get_rules_history,
+                      get_ruleset_by_id)
+from scoring_engine import score_account, get_default_rules
 
 app = Flask(__name__)
 app.secret_key = "pra-legal-scoring-2024"
@@ -16,59 +17,85 @@ US_STATES = [
     "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
 ]
 
+# Maps stored recommendation string → (detail text, CSS band class)
+_BAND_MAP = {
+    "High Priority":   ("Recommend Legal Action",        "high"),
+    "Medium Priority": ("Further Investigation Required", "medium"),
+    "Low Priority":    ("Legal Action Not Recommended",  "low"),
+}
+
 
 @app.route("/")
 def dashboard():
     accounts = get_all_accounts()
     stats = {
-        "total": len(accounts),
+        "total":  len(accounts),
         "scored": sum(1 for a in accounts if a["legal_score"] is not None),
-        "high": sum(1 for a in accounts if a["recommendation"] == "High Priority"),
+        "high":   sum(1 for a in accounts if a["recommendation"] == "High Priority"),
         "medium": sum(1 for a in accounts if a["recommendation"] == "Medium Priority"),
-        "low": sum(1 for a in accounts if a["recommendation"] == "Low Priority"),
+        "low":    sum(1 for a in accounts if a["recommendation"] == "Low Priority"),
     }
     return render_template("dashboard.html", accounts=accounts, stats=stats)
 
 
 @app.route("/score/new", methods=["GET", "POST"])
 def new_score():
+    all_rulesets = get_rules_history()
+    active_rule_id = next((r['id'] for r in all_rulesets if r['is_active']), None)
+    all_rules_data = {str(r['id']): json.loads(r['rules_json']) for r in all_rulesets}
+
     if request.method == "POST":
+        rule_id = request.form.get('rule_id', type=int)
+        rules = all_rules_data.get(str(rule_id)) if rule_id else None
+        if not rules:
+            rules = all_rules_data.get(str(active_rule_id)) or get_default_rules()
+            rule_id = None
+
+        def _render_form(selected_rule_id):
+            return render_template("score_form.html", states=US_STATES,
+                                   form=request.form, rules_json=json.dumps(rules),
+                                   all_rulesets=all_rulesets,
+                                   active_rule_id=active_rule_id,
+                                   selected_rule_id=selected_rule_id,
+                                   all_rules_json=json.dumps(all_rules_data))
+
+        selected_rule_id = rule_id or active_rule_id
+
         try:
             data = {
-                "account_number": request.form["account_number"].strip(),
-                "debtor_name":    request.form["debtor_name"].strip(),
-                "debt_amount":    float(request.form["debt_amount"]),
-                "debt_age_days":  int(request.form["debt_age_days"]),
-                "credit_score":   int(request.form["credit_score"]),
+                "account_number":    request.form["account_number"].strip(),
+                "debtor_name":       request.form["debtor_name"].strip(),
+                "debt_amount":       float(request.form["debt_amount"]),
+                "debt_age_days":     int(request.form["debt_age_days"]),
+                "credit_score":      int(request.form["credit_score"]),
                 "employment_status": request.form["employment_status"],
-                "owns_assets":    1 if request.form.get("owns_assets") == "1" else 0,
-                "prior_payment":  1 if request.form.get("prior_payment") == "1" else 0,
-                "state":          request.form["state"],
+                "owns_assets":       1 if request.form.get("owns_assets") == "1" else 0,
+                "prior_payment":     1 if request.form.get("prior_payment") == "1" else 0,
+                "state":             request.form["state"],
             }
 
             if not (300 <= data["credit_score"] <= 850):
                 flash("Credit score must be between 300 and 850.", "error")
-                rules = get_active_rules()
-                return render_template("score_form.html", states=US_STATES,
-                                       form=request.form, rules_json=json.dumps(rules))
+                return _render_form(selected_rule_id)
 
-            rules = get_active_rules()
-            account_id = create_account(data)
             result = score_account(data, rules=rules)
+            account_id = create_account(data)
             save_score(account_id, result["legal_score"], result["recommendation"],
-                       json.dumps(result["breakdown"]))
+                       json.dumps(result["breakdown"]), rule_id=rule_id)
 
             return redirect(url_for("result", account_id=account_id))
 
         except ValueError as e:
             flash(f"Invalid input: {e}", "error")
-            rules = get_active_rules()
-            return render_template("score_form.html", states=US_STATES,
-                                   form=request.form, rules_json=json.dumps(rules))
+            return _render_form(selected_rule_id)
 
-    rules = get_active_rules()
+    active_rules = all_rules_data.get(str(active_rule_id)) or get_default_rules()
     return render_template("score_form.html", states=US_STATES, form={},
-                           rules_json=json.dumps(rules))
+                           rules_json=json.dumps(active_rules),
+                           all_rulesets=all_rulesets,
+                           active_rule_id=active_rule_id,
+                           selected_rule_id=active_rule_id,
+                           all_rules_json=json.dumps(all_rules_data))
 
 
 @app.route("/score/<int:account_id>")
@@ -84,14 +111,17 @@ def result(account_id):
         return redirect(url_for("dashboard"))
 
     latest = history[0]
-    rules = get_active_rules()
-    result_data = score_account(dict(account), rules=rules)
-    result_data["legal_score"] = latest["legal_score"]
+    rec = latest["recommendation"]
+    rec_detail, band = _BAND_MAP.get(rec, ("", "low"))
+    result_data = {
+        "legal_score":    latest["legal_score"],
+        "recommendation": rec,
+        "rec_detail":     rec_detail,
+        "band":           band,
+        "breakdown":      json.loads(latest["score_breakdown"]),
+    }
 
-    return render_template("result.html",
-                           account=account,
-                           result=result_data,
-                           history=history)
+    return render_template("result.html", account=account, result=result_data, history=history)
 
 
 @app.route("/score/existing/<int:account_id>", methods=["POST"])
@@ -115,15 +145,24 @@ def accounts_list():
 
 @app.route("/rules", methods=["GET"])
 def rule_engine():
-    rules = get_active_rules()
     history = get_rules_history()
-    active_name = "Default Ruleset"
-    for h in history:
-        if h["is_active"]:
-            active_name = h["rule_name"]
-            break
+    load_id = request.args.get('load', type=int)
+    is_new = request.args.get('new') == '1'
+
+    if is_new:
+        rules = get_default_rules()
+        active_name = ''
+        load_id = None
+    elif load_id:
+        rules = get_ruleset_by_id(load_id) or get_active_rules()
+        active_name = next((r['rule_name'] for r in history if r['id'] == load_id), 'Default Ruleset')
+    else:
+        rules = get_active_rules()
+        active_name = next((r['rule_name'] for r in history if r['is_active']), 'Default Ruleset')
+        load_id = None
+
     return render_template("rules.html", rules=rules, history=history,
-                           active_name=active_name)
+                           active_name=active_name, loaded_id=load_id, is_new=is_new)
 
 
 @app.route("/rules", methods=["POST"])
@@ -136,11 +175,7 @@ def save_rules_route():
             return jsonify({"error": "Missing factors or score_bands"}), 400
 
         rule_name = (body.get("rule_name") or "Custom Ruleset").strip() or "Custom Ruleset"
-        rules_to_save = {
-            "score_bands": body["score_bands"],
-            "factors": body["factors"],
-        }
-        save_rules(rule_name, rules_to_save)
+        save_rules(rule_name, {"score_bands": body["score_bands"], "factors": body["factors"]})
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
