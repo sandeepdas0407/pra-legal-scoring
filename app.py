@@ -1,6 +1,6 @@
 from flask import Flask, render_template
 from database import init_db
-from modules.legal_scoring import bp as legal_bp
+from modules.scoring import bp as legal_bp
 from modules.attorney_placements import bp as placements_bp
 
 app = Flask(__name__)

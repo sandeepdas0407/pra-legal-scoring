@@ -47,6 +47,35 @@ def init_db():
             is_active INTEGER NOT NULL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS attorneys (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            firm_name TEXT NOT NULL,
+            contact_name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            states TEXT NOT NULL,
+            max_capacity INTEGER NOT NULL DEFAULT 50,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS placements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id INTEGER NOT NULL,
+            attorney_id INTEGER NOT NULL,
+            status TEXT NOT NULL DEFAULT 'Placed',
+            placed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            outcome_amount REAL,
+            notes TEXT,
+            FOREIGN KEY (account_id) REFERENCES accounts(id),
+            FOREIGN KEY (attorney_id) REFERENCES attorneys(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_placements_account  ON placements(account_id);
+        CREATE INDEX IF NOT EXISTS idx_placements_attorney ON placements(attorney_id);
+        CREATE INDEX IF NOT EXISTS idx_placements_status   ON placements(status);
     """)
 
     # Seed default ruleset if table is empty
@@ -94,6 +123,22 @@ def init_db():
                 VALUES (?,?,?,?)
             """, (data["id"], result["legal_score"], result["recommendation"],
                   json.dumps(result["breakdown"])))
+
+    # Seed attorneys if empty
+    cur.execute("SELECT COUNT(*) FROM attorneys")
+    if cur.fetchone()[0] == 0:
+        sample_attorneys = [
+            ("Harrington & Associates",  "Carol Harrington", "c.harrington@harringtonlaw.com", "214-555-0101", "TX,OK,AR,LA", 60),
+            ("Pacific Legal Group",       "James Tanaka",     "j.tanaka@pacificlegal.com",      "415-555-0202", "CA,OR,WA,NV", 80),
+            ("Southeastern Recovery Law", "Maria Santos",     "m.santos@serecovery.com",        "404-555-0303", "FL,GA,SC,NC", 70),
+            ("Midwestern Debt Solutions", "Robert Kowalski",  "r.kowalski@mwdebt.com",          "312-555-0404", "IL,IN,OH,MI", 50),
+            ("Northeast Collections LLC", "Patricia Dunne",   "p.dunne@necollections.com",      "212-555-0505", "NY,NJ,CT,PA", 65),
+        ]
+        cur.executemany("""
+            INSERT INTO attorneys
+            (firm_name, contact_name, email, phone, states, max_capacity)
+            VALUES (?,?,?,?,?,?)
+        """, sample_attorneys)
 
     # Migrate: add rule_id column to score_results if not present
     try:
