@@ -4,20 +4,28 @@ from .db import (
     get_all_attorneys, get_attorney, create_attorney, update_attorney,
     deactivate_attorney, get_attorneys_for_state,
     get_all_placements, get_placement, get_active_placement_for_account,
+    get_placements_for_attorney,
     create_placement, update_placement_status,
     get_placement_stats,
 )
+from modules.constants import US_STATES, PLACEMENT_STATUSES
 from . import bp
 
-PLACEMENT_STATUSES = ["Placed", "Active", "Settled", "Judgment", "Closed-No Recovery", "Recalled"]
 
-US_STATES = [
-    "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
-    "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
-    "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-    "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
-    "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
-]
+def _parse_attorney_form(form, include_is_active=False):
+    """Parse and validate attorney form fields. Raises ValueError on bad input."""
+    states_raw = form.get("states", "").strip()
+    data = {
+        "firm_name":    form["firm_name"].strip(),
+        "contact_name": form["contact_name"].strip(),
+        "email":        form["email"].strip(),
+        "phone":        form["phone"].strip(),
+        "states":       ",".join(s.strip() for s in states_raw.split(",") if s.strip()),
+        "max_capacity": int(form["max_capacity"]),
+    }
+    if include_is_active:
+        data["is_active"] = 1 if form.get("is_active") == "1" else 0
+    return data
 
 
 # ── Attorney routes ────────────────────────────────────────────────────────────
@@ -31,17 +39,8 @@ def attorney_list():
 @bp.route("/attorneys/new", methods=["GET", "POST"])
 def attorney_new():
     if request.method == "POST":
-        states_raw = request.form.get("states", "").strip()
-        states_clean = ",".join(s.strip() for s in states_raw.split(",") if s.strip())
         try:
-            data = {
-                "firm_name":    request.form["firm_name"].strip(),
-                "contact_name": request.form["contact_name"].strip(),
-                "email":        request.form["email"].strip(),
-                "phone":        request.form["phone"].strip(),
-                "states":       states_clean,
-                "max_capacity": int(request.form["max_capacity"]),
-            }
+            data = _parse_attorney_form(request.form)
             if not data["firm_name"] or not data["contact_name"]:
                 flash("Firm name and contact name are required.", "error")
                 return render_template("attorney_placements/attorney_form.html",
@@ -62,8 +61,7 @@ def attorney_detail(attorney_id):
     if not attorney:
         flash("Attorney not found.", "error")
         return redirect(url_for("placements.attorney_list"))
-    placements = get_all_placements()
-    atty_placements = [p for p in placements if p["attorney_id"] == attorney_id]
+    atty_placements = get_placements_for_attorney(attorney_id)
     return render_template("attorney_placements/attorney_detail.html", attorney=attorney,
                            placements=atty_placements, statuses=PLACEMENT_STATUSES)
 
@@ -75,18 +73,8 @@ def attorney_edit(attorney_id):
         flash("Attorney not found.", "error")
         return redirect(url_for("placements.attorney_list"))
     if request.method == "POST":
-        states_raw = request.form.get("states", "").strip()
-        states_clean = ",".join(s.strip() for s in states_raw.split(",") if s.strip())
         try:
-            data = {
-                "firm_name":    request.form["firm_name"].strip(),
-                "contact_name": request.form["contact_name"].strip(),
-                "email":        request.form["email"].strip(),
-                "phone":        request.form["phone"].strip(),
-                "states":       states_clean,
-                "max_capacity": int(request.form["max_capacity"]),
-                "is_active":    1 if request.form.get("is_active") == "1" else 0,
-            }
+            data = _parse_attorney_form(request.form, include_is_active=True)
             update_attorney(attorney_id, data)
             flash("Attorney updated.", "success")
             return redirect(url_for("placements.attorney_detail", attorney_id=attorney_id))

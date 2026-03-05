@@ -88,6 +88,19 @@ def get_attorneys_for_state(state):
     return rows
 
 
+def get_placements_for_attorney(attorney_id):
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT p.*, ac.account_number, ac.debtor_name, ac.debt_amount, ac.state
+        FROM placements p
+        JOIN accounts ac ON ac.id = p.account_id
+        WHERE p.attorney_id = ?
+        ORDER BY p.placed_at DESC
+    """, (attorney_id,)).fetchall()
+    conn.close()
+    return rows
+
+
 # ── Placement CRUD ────────────────────────────────────────────────────────────
 
 def get_all_placements(status_filter=None):

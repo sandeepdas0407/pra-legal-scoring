@@ -81,7 +81,7 @@ def init_db():
     # Seed default ruleset if table is empty
     cur.execute("SELECT COUNT(*) FROM score_rules")
     if cur.fetchone()[0] == 0:
-        from scoring_engine import get_default_rules
+        from modules.scoring.scoring_engine import get_default_rules
         cur.execute(
             "INSERT INTO score_rules (rule_name, rules_json, is_active) VALUES (?, ?, 1)",
             ("Default Ruleset", json.dumps(get_default_rules())),
@@ -112,7 +112,7 @@ def init_db():
     # Auto-score the sample accounts so the dashboard looks populated
     cur.execute("SELECT COUNT(*) FROM score_results")
     if cur.fetchone()[0] == 0:
-        from scoring_engine import score_account, get_default_rules
+        from modules.scoring.scoring_engine import score_account, get_default_rules
         rules = get_default_rules()
         cur.execute("SELECT * FROM accounts")
         for row in cur.fetchall():
@@ -232,7 +232,7 @@ def get_active_rules() -> dict:
     conn.close()
     if row:
         return json.loads(row["rules_json"])
-    from scoring_engine import get_default_rules
+    from modules.scoring.scoring_engine import get_default_rules
     return get_default_rules()
 
 
