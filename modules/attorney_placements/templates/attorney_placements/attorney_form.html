@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit" if editing else "Add" }} Attorney{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <a href="{{ url_for('placements.attorney_list') }}" class="back-link">← Attorneys</a>
+    <h1 class="page-title">{{ "Edit Attorney" if editing else "Add Attorney" }}</h1>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container form-container">
+    <form method="POST" action="{{ url_for('placements.attorney_edit', attorney_id=attorney.id) if editing else url_for('placements.attorney_new') }}">
+
+      <div class="form-section">
+        <p class="form-section-title">Firm Information</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firm_name">Firm Name <span class="req">*</span></label>
+            <input type="text" id="firm_name" name="firm_name"
+                   value="{{ form.get('firm_name', '') }}" required>
+          </div>
+          <div class="form-group">
+            <label for="contact_name">Contact Name <span class="req">*</span></label>
+            <input type="text" id="contact_name" name="contact_name"
+                   value="{{ form.get('contact_name', '') }}" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email"
+                   value="{{ form.get('email', '') }}">
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone</label>
+            <input type="text" id="phone" name="phone"
+                   value="{{ form.get('phone', '') }}">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <p class="form-section-title">Coverage &amp; Capacity</p>
+        <div class="form-row">
+          <div class="form-group" style="grid-column: span 2;">
+            <label for="states">States (comma-separated, e.g. TX,OK,LA)</label>
+            <input type="text" id="states" name="states"
+                   value="{{ form.get('states', '') }}" placeholder="TX,OK,AR">
+            <span class="field-hint">List all US state codes this firm covers.</span>
+          </div>
+          <div class="form-group">
+            <label for="max_capacity">Max Capacity</label>
+            <input type="number" id="max_capacity" name="max_capacity" min="1" max="500"
+                   value="{{ form.get('max_capacity', 50) }}">
+          </div>
+          {% if editing %}
+          <div class="form-group">
+            <label>Status</label>
+            <select name="is_active">
+              <option value="1" {{ 'selected' if form.get('is_active', 1)|int == 1 }}>Active</option>
+              <option value="0" {{ 'selected' if form.get('is_active', 1)|int == 0 }}>Inactive</option>
+            </select>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="{{ url_for('placements.attorney_detail', attorney_id=attorney.id) if editing else url_for('placements.attorney_list') }}"
+           class="btn-ghost">Cancel</a>
+        <button type="submit" class="btn-primary">{{ "Save Changes" if editing else "Add Attorney" }}</button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

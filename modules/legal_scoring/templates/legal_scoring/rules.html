@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Rule Engine{% endblock %}
 
+{% block scripts %}
+<script>
+window.RULES_SAVE_URL = "{{ url_for('legal.save_rules_route') }}";
+window.RULES_ACTIVATE_BASE = "{{ url_for('legal.activate_rule', rule_id=0) }}".slice(0, -1);
+</script>
+{% endblock %}
+
 {% block content %}
 <div id="rules-page"></div>
 
@@ -17,7 +24,7 @@
 
 <section class="page-hero">
   <div class="container">
-    <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+    <a href="{{ url_for('legal.dashboard') }}" class="back-link">← Back to Dashboard</a>
     <h1 class="page-title">Score Rule Engine</h1>
     <p class="page-sub">Configure scoring weights and thresholds. Changes are versioned and take effect immediately on all future scores.</p>
   </div>
@@ -180,7 +187,7 @@
 
         <!-- New Ruleset -->
         <div class="sidebar-card">
-          <a href="{{ url_for('rule_engine', new=1) }}" class="btn-outline" style="display:block; text-align:center; width:100%; box-sizing:border-box;">+ New Ruleset</a>
+          <a href="{{ url_for('legal.rule_engine', new=1) }}" class="btn-outline" style="display:block; text-align:center; width:100%; box-sizing:border-box;">+ New Ruleset</a>
           <p class="weight-hint" style="margin-top:10px;">Start from default values with a blank name.</p>
         </div>
 
@@ -203,7 +210,7 @@
               </div>
               <div class="history-meta">{{ h.created_at[:16] if h.created_at else '—' }}</div>
               <div class="history-actions">
-                <a href="{{ url_for('rule_engine', load=h.id) }}"
+                <a href="{{ url_for('legal.rule_engine', load=h.id) }}"
                    class="btn-outline history-action-btn">Load</a>
                 {% if not h.is_active %}
                 <button type="button" class="activate-btn btn-outline history-action-btn"

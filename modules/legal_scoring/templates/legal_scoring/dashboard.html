@@ -10,7 +10,7 @@
     <p class="hero-eyebrow">Legal Recovery Intelligence</p>
     <h1 class="hero-title">Legal Scoring<br/>Dashboard</h1>
     <p class="hero-sub">Evaluate account viability for legal action using a data-driven scoring model across six key recovery factors.</p>
-    <a href="{{ url_for('new_score') }}" class="btn-primary">Score a New Account</a>
+    <a href="{{ url_for('legal.new_score') }}" class="btn-primary">Score a New Account</a>
   </div>
 </section>
 
@@ -45,7 +45,7 @@
   <div class="container">
     <div class="section-header">
       <h2 class="section-title">Account Portfolio</h2>
-      <a href="{{ url_for('new_score') }}" class="btn-outline">+ Add Account</a>
+      <a href="{{ url_for('legal.new_score') }}" class="btn-outline">+ Add Account</a>
     </div>
 
     {% if accounts %}
@@ -81,7 +81,7 @@
     </div>
     {% else %}
       <div class="empty-state">
-        <p>No accounts yet. <a href="{{ url_for('new_score') }}">Score your first account</a>.</p>
+        <p>No accounts yet. <a href="{{ url_for('legal.new_score') }}">Score your first account</a>.</p>
       </div>
     {% endif %}
   </div>

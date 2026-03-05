@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="container">
+    <p class="hero-eyebrow">PRA Legal Recovery Platform</p>
+    <h1 class="hero-title">Legal Recovery<br/>Intelligence</h1>
+    <p class="hero-sub">Unified platform for scoring accounts, managing rules, and coordinating attorney placements.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="landing-grid">
+
+      <!-- Legal Scoring Module -->
+      <div class="module-card">
+        <div class="module-card-icon">⚖</div>
+        <h2 class="module-card-title">Legal Scoring</h2>
+        <p class="module-card-desc">Score accounts for legal viability using a configurable six-factor model. Manage scoring rules, review portfolios, and identify high-priority accounts for recovery action.</p>
+        <ul class="module-card-features">
+          <li>Data-driven 0–100 legal score</li>
+          <li>Versioned scoring rule engine</li>
+          <li>Full account portfolio view</li>
+        </ul>
+        <a href="{{ url_for('legal.dashboard') }}" class="btn-primary module-card-cta">Open Legal Scoring →</a>
+      </div>
+
+      <!-- Attorney Placements Module -->
+      <div class="module-card">
+        <div class="module-card-icon">🏛</div>
+        <h2 class="module-card-title">Attorney Placements</h2>
+        <p class="module-card-desc">Place scored accounts with law firms, track case progress through settlement and judgment, and measure recovery outcomes across your attorney network.</p>
+        <ul class="module-card-features">
+          <li>Attorney roster with capacity tracking</li>
+          <li>Intelligent state-based matching</li>
+          <li>Full placement lifecycle management</li>
+        </ul>
+        <a href="{{ url_for('placements.placements_list') }}" class="btn-primary module-card-cta">Open Placements →</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{% endblock %}

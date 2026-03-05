@@ -12,7 +12,7 @@
 
 <section class="page-hero">
   <div class="container">
-    <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+    <a href="{{ url_for('legal.dashboard') }}" class="back-link">← Back to Dashboard</a>
     <h1 class="page-title">Score New Account</h1>
     <p class="page-sub">Enter the account details below. All fields are required to generate an accurate legal score.</p>
   </div>
@@ -21,7 +21,7 @@
 <section class="section">
   <div class="container form-container">
 
-    <form method="POST" action="{{ url_for('new_score') }}" id="scoreForm" novalidate>
+    <form method="POST" action="{{ url_for('legal.new_score') }}" id="scoreForm" novalidate>
 
       <!-- SECTION: Scoring Ruleset -->
       <div class="form-section">
@@ -149,7 +149,7 @@
       </div>
 
       <div class="form-actions">
-        <a href="{{ url_for('dashboard') }}" class="btn-ghost">Cancel</a>
+        <a href="{{ url_for('legal.dashboard') }}" class="btn-ghost">Cancel</a>
         <button type="submit" class="btn-primary">Generate Legal Score</button>
       </div>
 

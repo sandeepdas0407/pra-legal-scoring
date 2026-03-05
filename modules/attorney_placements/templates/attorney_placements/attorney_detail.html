@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% from "_macros.html" import placement_status_badge %}
+{% block title %}{{ attorney.firm_name }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <a href="{{ url_for('placements.attorney_list') }}" class="back-link">← Attorneys</a>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:14px;">
+      <div>
+        <h1 class="page-title" style="margin-top:0;">{{ attorney.firm_name }}</h1>
+        <p class="page-sub">{{ attorney.contact_name }} &nbsp;·&nbsp; {{ attorney.email }} &nbsp;·&nbsp; {{ attorney.phone }}</p>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="{{ url_for('placements.attorney_edit', attorney_id=attorney.id) }}" class="btn-outline">Edit</a>
+        {% if attorney.is_active %}
+        <form method="POST" action="{{ url_for('placements.attorney_deactivate', attorney_id=attorney.id) }}"
+              onsubmit="return confirm('Deactivate this attorney?')">
+          <button type="submit" class="btn-ghost">Deactivate</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="result-grid" style="margin-bottom:2rem;">
+
+      <!-- Info card -->
+      <div class="result-card">
+        <h2 class="card-title">Details</h2>
+        <table class="detail-table">
+          <tr><th>Status</th><td>
+            {% if attorney.is_active %}
+            <span class="atty-status-active">Active</span>
+            {% else %}
+            <span class="atty-status-inactive">Inactive</span>
+            {% endif %}
+          </td></tr>
+          <tr><th>States Covered</th><td>
+            {% for s in attorney.states.split(',') %}
+            <span class="state-chip">{{ s.strip() }}</span>
+            {% endfor %}
+          </td></tr>
+          <tr><th>Max Capacity</th><td>{{ attorney.max_capacity }}</td></tr>
+          <tr><th>Added</th><td>{{ attorney.created_at[:10] }}</td></tr>
+        </table>
+      </div>
+
+      <!-- Capacity card -->
+      <div class="result-card" style="display:flex;flex-direction:column;gap:16px;">
+        <h2 class="card-title">Capacity</h2>
+        {% set active_count = placements | selectattr('status', 'in', ['Placed', 'Active']) | list | length %}
+        {% set pct = ((active_count / attorney.max_capacity) * 100) | int if attorney.max_capacity > 0 else 0 %}
+        <div style="font-size:3rem;font-weight:800;color:var(--white);">{{ active_count }}<span style="font-size:1.2rem;color:var(--gray);font-weight:400;"> / {{ attorney.max_capacity }}</span></div>
+        <div class="capacity-bar-bg" style="height:12px;border-radius:6px;">
+          <div class="capacity-bar {% if pct >= 90 %}capacity-full{% elif pct >= 60 %}capacity-mid{% endif %}"
+               style="width:{{ [pct,100]|min }}%;height:12px;border-radius:6px;"></div>
+        </div>
+        <p style="font-size:.85rem;color:var(--gray);">{{ [attorney.max_capacity - active_count, 0]|max }} slot(s) available</p>
+      </div>
+    </div>
+
+    <!-- Placements -->
+    <div class="result-card">
+      <h2 class="card-title">Placements ({{ placements|length }})</h2>
+      {% if placements %}
+      <div class="table-wrap" style="border:none;">
+        <table class="data-table">
+          <thead>
+            <tr><th>Account</th><th>Debtor</th><th>Balance</th><th>Status</th><th>Placed</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for p in placements %}
+            <tr>
+              <td class="mono">{{ p.account_number }}</td>
+              <td>{{ p.debtor_name }}</td>
+              <td>${{ "{:,.2f}".format(p.debt_amount) }}</td>
+              <td>{{ placement_status_badge(p.status) }}</td>
+              <td>{{ p.placed_at[:10] }}</td>
+              <td><a href="{{ url_for('placements.placement_detail', placement_id=p.id) }}" class="tbl-link">View →</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p style="color:var(--gray);font-size:.9rem;">No placements yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

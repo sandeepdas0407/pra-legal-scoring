@@ -6,7 +6,7 @@
 
 <section class="page-hero">
   <div class="container">
-    <a href="{{ url_for('dashboard') }}" class="back-link">← Dashboard</a>
+    <a href="{{ url_for('legal.dashboard') }}" class="back-link">← Dashboard</a>
     <h1 class="page-title">Account Portfolio</h1>
     <p class="page-sub">All accounts in the system. Click "View" to see full scoring details or "Score Now" to run a legal score.</p>
   </div>
@@ -16,7 +16,7 @@
   <div class="container">
     <div class="section-header">
       <h2 class="section-title">{{ accounts | length }} Accounts</h2>
-      <a href="{{ url_for('new_score') }}" class="btn-outline">+ Score New Account</a>
+      <a href="{{ url_for('legal.new_score') }}" class="btn-outline">+ Score New Account</a>
     </div>
 
     {% if accounts %}
@@ -56,7 +56,7 @@
     </div>
     {% else %}
       <div class="empty-state">
-        <p>No accounts found. <a href="{{ url_for('new_score') }}">Add the first one</a>.</p>
+        <p>No accounts found. <a href="{{ url_for('legal.new_score') }}">Add the first one</a>.</p>
       </div>
     {% endif %}
   </div>

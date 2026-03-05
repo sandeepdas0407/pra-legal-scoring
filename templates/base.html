@@ -13,15 +13,42 @@
   <!-- HEADER -->
   <header class="site-header">
     <div class="container header-inner">
-      <a href="{{ url_for('dashboard') }}" class="logo">
+      <a href="{{ url_for('landing') }}" class="logo">
         <span class="logo-pra">PRA</span>
         <span class="logo-sub">Legal Recovery</span>
       </a>
       <nav class="main-nav">
-        <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">Dashboard</a>
-        <a href="{{ url_for('accounts_list') }}" class="nav-link {% if request.endpoint == 'accounts_list' %}active{% endif %}">Accounts</a>
-        <a href="{{ url_for('rule_engine') }}" class="nav-link {% if request.endpoint == 'rule_engine' %}active{% endif %}">Rule Engine</a>
-        <a href="{{ url_for('new_score') }}" class="nav-btn">+ Score Account</a>
+
+        <!-- Legal Scoring dropdown -->
+        <div class="nav-group {% if request.endpoint and request.endpoint.startswith('legal.') %}nav-group-active{% endif %}">
+          <span class="nav-group-label">Legal Scoring ▾</span>
+          <div class="dropdown-menu">
+            <a href="{{ url_for('legal.dashboard') }}"
+               class="dropdown-item {% if request.endpoint == 'legal.dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="{{ url_for('legal.accounts_list') }}"
+               class="dropdown-item {% if request.endpoint == 'legal.accounts_list' %}active{% endif %}">Accounts</a>
+            <a href="{{ url_for('legal.rule_engine') }}"
+               class="dropdown-item {% if request.endpoint == 'legal.rule_engine' %}active{% endif %}">Rule Engine</a>
+            <div class="dropdown-divider"></div>
+            <a href="{{ url_for('legal.new_score') }}"
+               class="dropdown-item dropdown-item-cta {% if request.endpoint == 'legal.new_score' %}active{% endif %}">+ Score Account</a>
+          </div>
+        </div>
+
+        <!-- Attorney Placements dropdown -->
+        <div class="nav-group {% if request.endpoint and request.endpoint.startswith('placements.') %}nav-group-active{% endif %}">
+          <span class="nav-group-label">Attorney Placements ▾</span>
+          <div class="dropdown-menu">
+            <a href="{{ url_for('placements.attorney_list') }}"
+               class="dropdown-item {% if request.endpoint in ('placements.attorney_list','placements.attorney_new','placements.attorney_detail','placements.attorney_edit') %}active{% endif %}">Attorneys</a>
+            <a href="{{ url_for('placements.placements_list') }}"
+               class="dropdown-item {% if request.endpoint in ('placements.placements_list','placements.placement_new','placements.placement_detail') %}active{% endif %}">Placements</a>
+          </div>
+        </div>
+
+        <a href="{{ url_for('landing') }}"
+           class="nav-link {% if request.endpoint == 'landing' %}active{% endif %}">Home</a>
+
       </nav>
     </div>
   </header>

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% from "_macros.html" import placement_status_badge %}
+{% block title %}Placements{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <a href="{{ url_for('landing') }}" class="back-link">← Home</a>
+    <h1 class="page-title">Placements</h1>
+    <p class="page-sub">Track all accounts placed with law firms.</p>
+  </div>
+</section>
+
+<!-- Stats strip -->
+<div class="stats-strip">
+  <div class="container">
+    <div class="stats-grid" style="grid-template-columns:repeat(7,1fr);">
+      <div class="stat-card">
+        <span class="stat-num">{{ stats.total }}</span>
+        <span class="stat-label">Total</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" style="color:#60a5fa;">{{ stats.placed }}</span>
+        <span class="stat-label">Placed</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" style="color:var(--accent-lt);">{{ stats.active }}</span>
+        <span class="stat-label">Active</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" style="color:var(--high);">{{ stats.settled }}</span>
+        <span class="stat-label">Settled</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" style="color:var(--medium);">{{ stats.judgment }}</span>
+        <span class="stat-label">Judgment</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" style="color:var(--low);">{{ stats.closed_no_recovery }}</span>
+        <span class="stat-label">Closed/NR</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" style="color:var(--high);">${{ "{:,.0f}".format(stats.total_recovered) }}</span>
+        <span class="stat-label">Recovered</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <!-- Filter tabs -->
+    <div class="filter-tabs">
+      <a href="{{ url_for('placements.placements_list') }}"
+         class="filter-tab {{ 'filter-tab-active' if not current_filter }}">All</a>
+      {% for s in statuses %}
+      <a href="{{ url_for('placements.placements_list', status=s) }}"
+         class="filter-tab {{ 'filter-tab-active' if current_filter == s }}">{{ s }}</a>
+      {% endfor %}
+    </div>
+
+    {% if placements %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Account</th><th>Debtor</th><th>State</th><th>Balance</th>
+            <th>Attorney</th><th>Status</th><th>Placed</th><th>Recovered</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in placements %}
+          <tr>
+            <td class="mono">{{ p.account_number }}</td>
+            <td>{{ p.debtor_name }}</td>
+            <td>{{ p.state }}</td>
+            <td>${{ "{:,.2f}".format(p.debt_amount) }}</td>
+            <td>{{ p.firm_name }}</td>
+            <td>{{ placement_status_badge(p.status) }}</td>
+            <td>{{ p.placed_at[:10] }}</td>
+            <td>{% if p.outcome_amount %}${{ "{:,.2f}".format(p.outcome_amount) }}{% else %}—{% endif %}</td>
+            <td><a href="{{ url_for('placements.placement_detail', placement_id=p.id) }}" class="tbl-link">View →</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <p>No placements{% if current_filter %} with status "{{ current_filter }}"{% endif %}.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "_macros.html" import placement_status_badge %}
+{% block title %}Attorneys{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <p class="back-link"><a href="{{ url_for('landing') }}" class="back-link">← Home</a></p>
+    <h1 class="page-title">Attorney Roster</h1>
+    <p class="page-sub">Manage law firms used for debt recovery placements.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">All Attorneys</h2>
+      <a href="{{ url_for('placements.attorney_new') }}" class="btn-primary">+ Add Attorney</a>
+    </div>
+
+    {% if attorneys %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Firm</th>
+            <th>Contact</th>
+            <th>States</th>
+            <th>Capacity</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in attorneys %}
+          {% set pct = ((a.active_cases / a.max_capacity) * 100) | int if a.max_capacity > 0 else 0 %}
+          <tr>
+            <td><strong>{{ a.firm_name }}</strong></td>
+            <td class="mono">{{ a.contact_name }}</td>
+            <td>
+              {% for s in a.states.split(',') %}
+              <span class="state-chip">{{ s.strip() }}</span>
+              {% endfor %}
+            </td>
+            <td>
+              <div class="capacity-wrap">
+                <div class="capacity-bar-bg">
+                  <div class="capacity-bar {% if pct >= 90 %}capacity-full{% elif pct >= 60 %}capacity-mid{% endif %}"
+                       style="width:{{ [pct,100]|min }}%"></div>
+                </div>
+                <span class="capacity-label">{{ a.active_cases }}/{{ a.max_capacity }}</span>
+              </div>
+            </td>
+            <td>
+              {% if a.is_active %}
+              <span class="atty-status-active">Active</span>
+              {% else %}
+              <span class="atty-status-inactive">Inactive</span>
+              {% endif %}
+            </td>
+            <td><a href="{{ url_for('placements.attorney_detail', attorney_id=a.id) }}" class="tbl-link">View →</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <p>No attorneys yet. <a href="{{ url_for('placements.attorney_new') }}">Add the first one.</a></p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

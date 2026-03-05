@@ -1,25 +1,45 @@
 {% macro score_badge(score) %}
-  {% if score is not none %}
-    <span class="score-badge score-{{ 'high' if score >= 70 else ('medium' if score >= 40 else 'low') }}">{{ score }}</span>
-  {% else %}
-    <span class="score-badge score-none">—</span>
-  {% endif %}
+{%- if score is none or score == '' -%}
+<span class="score-badge score-none">—</span>
+{%- elif score >= 70 -%}
+<span class="score-badge score-high">{{ score }}</span>
+{%- elif score >= 40 -%}
+<span class="score-badge score-medium">{{ score }}</span>
+{%- else -%}
+<span class="score-badge score-low">{{ score }}</span>
+{%- endif -%}
 {% endmacro %}
 
 {% macro rec_pill(rec) %}
-  {% if rec %}
-    <span class="rec-pill rec-{{ 'high' if rec == 'High Priority' else ('medium' if rec == 'Medium Priority' else 'low') }}">{{ rec }}</span>
-  {% else %}
-    <span class="rec-pill rec-none">Not Scored</span>
-  {% endif %}
+{%- if rec == 'High Priority' -%}
+<span class="rec-pill rec-high">High Priority</span>
+{%- elif rec == 'Medium Priority' -%}
+<span class="rec-pill rec-medium">Medium Priority</span>
+{%- elif rec == 'Low Priority' -%}
+<span class="rec-pill rec-low">Low Priority</span>
+{%- else -%}
+<span class="rec-pill rec-none">Unscored</span>
+{%- endif -%}
 {% endmacro %}
 
 {% macro account_action(acct) %}
-  {% if acct.legal_score is not none %}
-    <a href="{{ url_for('result', account_id=acct.id) }}" class="tbl-link">View</a>
-  {% else %}
-    <form method="POST" action="{{ url_for('rescore', account_id=acct.id) }}" style="display:inline">
-      <button type="submit" class="tbl-btn">Score Now</button>
-    </form>
-  {% endif %}
+{%- if acct.legal_score is not none -%}
+<a href="{{ url_for('legal.result', account_id=acct.id) }}" class="tbl-link">View →</a>
+{%- else -%}
+<form method="POST" action="{{ url_for('legal.rescore', account_id=acct.id) }}" style="display:inline;">
+  <button type="submit" class="tbl-btn">Score Now</button>
+</form>
+{%- endif -%}
+{% endmacro %}
+
+{% macro placement_status_badge(status) %}
+{%- set cls = {
+    'Placed':            'status-placed',
+    'Active':            'status-active',
+    'Settled':           'status-settled',
+    'Judgment':          'status-judgment',
+    'Closed-No Recovery':'status-closed',
+    'Recalled':          'status-recalled',
+}.get(status, 'status-placed') -%}
+<span class="status-badge {{ cls }}">{{ status }}</span>
 {% endmacro %}

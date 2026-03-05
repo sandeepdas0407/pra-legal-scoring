@@ -216,6 +216,103 @@ function showRulesError(msg) {
   }
 }
 
+// ── Attorney auto-suggest ─────────────────────────────────────────────────────
+
+async function loadPlacementSuggest(state) {
+  const panel   = document.getElementById('suggest-panel');
+  const listEl  = document.getElementById('suggest-list');
+  const selectEl = document.getElementById('attorney_id');
+  if (!panel || !listEl || !selectEl) return;
+
+  const baseUrl = window.SUGGEST_URL || '/placements/attorneys/suggest';
+  const resp = await fetch(baseUrl + '?state=' + encodeURIComponent(state));
+  const attorneys = await resp.json();
+
+  if (!attorneys.length) { panel.style.display = 'none'; return; }
+
+  listEl.innerHTML = attorneys.map(a => `
+    <div class="suggest-item">
+      <div class="suggest-item-info">
+        <span class="suggest-firm">${a.firm_name}</span>
+        <span class="suggest-meta">${a.contact_name} &nbsp;·&nbsp; ${a.active_cases}/${a.max_capacity} cases &nbsp;·&nbsp; ${a.available} available</span>
+      </div>
+      <button type="button" class="suggest-select-btn" data-id="${a.id}">Select</button>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.suggest-select-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      selectEl.value = this.dataset.id;
+      listEl.querySelectorAll('.suggest-item').forEach(it => it.style.outline = '');
+      this.closest('.suggest-item').style.outline = '2px solid var(--accent)';
+    });
+  });
+
+  panel.style.display = 'block';
+}
+
+// ── Placement status AJAX update ──────────────────────────────────────────────
+
+function initPlacementStatusForm() {
+  const form      = document.getElementById('statusForm');
+  const selectEl  = document.getElementById('statusSelect');
+  const outcomeDiv = document.getElementById('outcomeField');
+  const updateBtn = document.getElementById('updateBtn');
+  const msgEl     = document.getElementById('updateMsg');
+  if (!form || !window.PLACEMENT_ID) return;
+
+  const outcomeStatuses = ['Settled', 'Judgment'];
+
+  selectEl.addEventListener('change', function () {
+    if (outcomeDiv) {
+      outcomeDiv.style.display = outcomeStatuses.includes(this.value) ? '' : 'none';
+    }
+  });
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const status       = selectEl.value;
+    const outcomeInput = document.getElementById('outcomeAmount');
+    const notesInput   = document.getElementById('statusNotes');
+    const body = {
+      status,
+      outcome_amount: outcomeInput && outcomeInput.value ? parseFloat(outcomeInput.value) : null,
+      notes: notesInput ? notesInput.value : null,
+    };
+
+    updateBtn.disabled = true;
+    updateBtn.textContent = 'Saving…';
+
+    const updateUrl = window.PLACEMENT_UPDATE_URL ||
+      '/placements/' + window.PLACEMENT_ID + '/update';
+
+    try {
+      const resp = await fetch(updateUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        if (msgEl) { msgEl.style.display = 'block'; setTimeout(() => msgEl.style.display = 'none', 3000); }
+        // Update badge on page
+        const badge = document.querySelector('.page-hero .status-badge');
+        if (badge) {
+          badge.textContent = data.status;
+          badge.className = 'status-badge status-' + data.status.toLowerCase().replace(/[^a-z]/g, '');
+        }
+      } else {
+        alert('Error: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Network error: ' + err.message);
+    }
+
+    updateBtn.disabled = false;
+    updateBtn.textContent = 'Update Status';
+  });
+}
+
 // ── DOMContentLoaded ──────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -234,8 +331,16 @@ document.addEventListener('DOMContentLoaded', function () {
     estimateScore();
   }
 
-  // Rule Engine page — only runs on /rules
-  if (!document.getElementById('rules-page')) return;
+  // Rule Engine page — only runs on /legal/rules
+  if (!document.getElementById('rules-page')) {
+    // Placement form — auto-suggest
+    if (window.PLACEMENT_ACCOUNT_STATE) {
+      loadPlacementSuggest(window.PLACEMENT_ACCOUNT_STATE);
+    }
+    // Placement detail — status AJAX form
+    initPlacementStatusForm();
+    return;
+  }
 
   // Initialise card max-pts from rendered values
   document.querySelectorAll('.rule-card[data-key]').forEach(card => {
@@ -250,15 +355,16 @@ document.addEventListener('DOMContentLoaded', function () {
     medInput.addEventListener('input', () => { lowDisplay.textContent = medInput.value; });
   }
 
-  // Save button
+  // Save button — uses injected URL
   const saveBtn = document.getElementById('save-rules-btn');
   if (saveBtn) {
     saveBtn.addEventListener('click', async function () {
       const rules = buildRulesJSON();
       this.disabled = true;
       this.textContent = 'Saving\u2026';
+      const saveUrl = window.RULES_SAVE_URL || '/legal/rules';
       try {
-        const resp = await fetch('/rules', {
+        const resp = await fetch(saveUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(rules),
@@ -279,12 +385,13 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Activate historical version buttons
+  // Activate historical version buttons — uses injected base URL
   document.querySelectorAll('.activate-btn').forEach(btn => {
     btn.addEventListener('click', async function () {
       const id = this.dataset.ruleId;
+      const activateBase = window.RULES_ACTIVATE_BASE || '/legal/rules/activate/';
       try {
-        const resp = await fetch('/rules/activate/' + id, { method: 'POST' });
+        const resp = await fetch(activateBase + id, { method: 'POST' });
         const data = await resp.json();
         if (data.ok) window.location.reload();
         else showRulesError(data.error || 'Could not activate ruleset');
@@ -293,4 +400,5 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   });
+
 });

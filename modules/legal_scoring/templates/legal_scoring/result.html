@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import placement_status_badge %}
 {% block title %}Score Result — {{ account.account_number }}{% endblock %}
 
 {% block content %}
@@ -6,7 +7,7 @@
 <!-- RESULT HERO -->
 <section class="result-hero result-hero-{{ result.band }}">
   <div class="container">
-    <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+    <a href="{{ url_for('legal.dashboard') }}" class="back-link">← Back to Dashboard</a>
     <div class="result-hero-inner">
       <div class="result-meta">
         <p class="result-acct-num">{{ account.account_number }}</p>
@@ -113,9 +114,53 @@
   </div>
   {% endif %}
 
+  <!-- Placement Panel -->
+  <div class="container" style="margin-top: 2rem;">
+    <div class="result-card">
+      <h2 class="card-title">Attorney Placement</h2>
+
+      {% if active_placement %}
+        <div class="placement-active-row">
+          <div>
+            <span class="placement-firm">{{ active_placement.firm_name }}</span>
+            {{ placement_status_badge(active_placement.status) }}
+          </div>
+          <a href="{{ url_for('placements.placement_detail', placement_id=active_placement.id) }}"
+             class="btn-outline">View Placement</a>
+        </div>
+      {% elif result.legal_score >= 40 %}
+        <p class="placement-hint">This account is eligible for attorney placement.</p>
+        <a href="{{ url_for('placements.placement_new', account_id=account.id) }}"
+           class="btn-primary" style="margin-top: 12px;">Place with Attorney</a>
+      {% else %}
+        <p class="placement-hint placement-ineligible">Score below 40 — not eligible for placement.</p>
+      {% endif %}
+
+      {% if all_placements %}
+        <h3 style="font-size:.85rem;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-top:1.5rem;margin-bottom:.75rem;">Placement History</h3>
+        <table class="data-table">
+          <thead>
+            <tr><th>Date</th><th>Firm</th><th>Status</th><th>Recovered</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for p in all_placements %}
+            <tr>
+              <td>{{ p.placed_at[:10] }}</td>
+              <td>{{ p.firm_name }}</td>
+              <td>{{ placement_status_badge(p.status) }}</td>
+              <td>{% if p.outcome_amount %}${{ "{:,.2f}".format(p.outcome_amount) }}{% else %}—{% endif %}</td>
+              <td><a href="{{ url_for('placements.placement_detail', placement_id=p.id) }}" class="tbl-link">View</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+  </div>
+
   <div class="container form-actions" style="margin-top: 2rem;">
-    <a href="{{ url_for('dashboard') }}" class="btn-ghost">← Dashboard</a>
-    <a href="{{ url_for('new_score') }}" class="btn-primary">Score Another Account</a>
+    <a href="{{ url_for('legal.dashboard') }}" class="btn-ghost">← Dashboard</a>
+    <a href="{{ url_for('legal.new_score') }}" class="btn-primary">Score Another Account</a>
   </div>
 </section>
 
