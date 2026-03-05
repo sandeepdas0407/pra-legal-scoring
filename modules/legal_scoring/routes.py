@@ -4,7 +4,7 @@ from database import (get_all_accounts, get_account, create_account,
                       save_score, get_score_history,
                       get_active_rules, save_rules, activate_rules, get_rules_history,
                       get_ruleset_by_id)
-from scoring_engine import score_account, get_default_rules
+from .scoring_engine import score_account, get_default_rules
 from modules.attorney_placements.db import (
     get_active_placement_for_account, get_placements_for_account,
 )
