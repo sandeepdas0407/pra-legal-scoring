@@ -1,15 +1,20 @@
-# PRA Legal Scoring
+# PRA Legal Recovery
 
-An internal web application for scoring debtors on the likelihood of successful legal recovery. Built with Python (Flask) + SQLite + vanilla JS.
+An internal web application for scoring debtors on the likelihood of successful legal recovery, and managing attorney placements. Built with Python (Flask) + SQLite + vanilla JS.
 
 ---
 
-## Features
+## Modules
 
+### Legal Scoring
 - **Dashboard** — portfolio overview with High / Medium / Low priority counts
-- **Accounts** — searchable table of all scored accounts
-- **Score New Account** — form with a live score preview that mirrors the active ruleset
-- **Rule Engine** — admin UI to configure scoring weights and thresholds without touching code; changes are versioned and take effect immediately
+- **Accounts** — full account table with scores and recommendations
+- **Score New Account** — form with live score preview mirroring the active ruleset
+- **Rule Engine** — configure scoring weights and thresholds without touching code; changes are versioned and take effect immediately
+
+### Attorney Placements
+- **Attorneys** — manage law firms, contact info, state coverage and capacity
+- **Placements** — place scored accounts with attorneys; track status through Placed → Active → Settled / Judgment / Closed
 
 ---
 
@@ -36,48 +41,57 @@ Accounts are scored 0–100 across six weighted factors:
 
 ---
 
-## Rule Engine
-
-All scoring weights and thresholds are configurable from `/rules` — no code changes needed. Every save creates a new versioned ruleset. Previous versions can be reactivated at any time from the history panel.
-
----
-
 ## Getting Started
 
 **Requirements:** Python 3.9+
 
 ```bash
-# 1. Clone
-git clone https://github.com/sandeepdas0407/pra-legal-scoring.git
-cd pra-legal-scoring
-
-# 2. Install dependencies
+# 1. Install dependencies
 pip install -r requirements.txt
 
-# 3. Run
+# 2. Run
 python app.py
 ```
 
 Open **http://localhost:5000** in your browser.
 
-The database is created automatically on first run and seeded with 10 sample accounts.
+The database is created automatically on first run and seeded with 10 sample accounts and 5 attorneys.
 
 ---
 
 ## Project Structure
 
 ```
-legal_scoring/
-├── app.py              # Flask routes
-├── scoring_engine.py   # Rules-driven scoring logic
-├── database.py         # SQLite helpers + rule versioning
+legal_recovery/
+├── app.py                          # Flask app factory + landing route
+├── database.py                     # SQLite helpers, seeding, rule versioning
+├── requirements.txt
+├── run.bat                         # Windows launcher
+├── modules/
+│   ├── constants.py                # US_STATES, PLACEMENT_STATUSES
+│   ├── legal_scoring/
+│   │   ├── routes.py               # /legal/* routes
+│   │   ├── scoring_engine.py       # Rules-driven scoring logic
+│   │   └── templates/legal_scoring/
+│   │       ├── dashboard.html
+│   │       ├── accounts.html
+│   │       ├── score_form.html
+│   │       ├── result.html
+│   │       └── rules.html
+│   └── attorney_placements/
+│       ├── routes.py               # /placements/* routes
+│       ├── db.py                   # Attorney & placement DB helpers
+│       └── templates/attorney_placements/
+│           ├── attorney_list.html
+│           ├── attorney_form.html
+│           ├── attorney_detail.html
+│           ├── placements.html
+│           ├── placement_form.html
+│           └── placement_detail.html
 ├── templates/
 │   ├── base.html
-│   ├── dashboard.html
-│   ├── accounts.html
-│   ├── score_form.html
-│   ├── result.html
-│   └── rules.html      # Rule Engine page
+│   ├── landing.html
+│   └── _macros.html                # score_badge, rec_pill, placement_status_badge
 └── static/
     ├── css/style.css
     └── js/app.js

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import placement_status_badge %}
+{% from "_macros.html" import placement_status_badge, score_badge %}
 {% block title %}Placement — {{ placement.account_number }}{% endblock %}
 
 {% block scripts %}
@@ -44,11 +44,7 @@ window.PLACEMENT_UPDATE_URL = "{{ url_for('placements.placement_update', placeme
         <tr><th>Placed</th><td>{{ placement.placed_at[:10] }}</td></tr>
         <tr><th>Last Updated</th><td>{{ placement.updated_at[:10] }}</td></tr>
         <tr><th>Legal Score</th><td>
-          {% if placement.legal_score %}
-          <span class="score-badge score-{{ 'high' if placement.legal_score >= 70 else ('medium' if placement.legal_score >= 40 else 'low') }}">
-            {{ placement.legal_score }}
-          </span>
-          {% else %}—{% endif %}
+          {{ score_badge(placement.legal_score) }}
         </td></tr>
         <tr><th>Notes</th><td>{{ placement.notes or "—" }}</td></tr>
         {% if placement.outcome_amount %}

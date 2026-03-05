@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import placement_status_badge %}
+{% from "_macros.html" import placement_status_badge, score_badge %}
 {% block title %}Score Result — {{ account.account_number }}{% endblock %}
 
 {% block content %}
@@ -100,11 +100,7 @@
           <tr>
             <td>{{ h.scored_at }}</td>
             <td>{{ h.rule_name_used }}</td>
-            <td class="text-center">
-              <span class="score-badge score-{{ 'high' if h.legal_score >= 70 else ('medium' if h.legal_score >= 40 else 'low') }}">
-                {{ h.legal_score }}
-              </span>
-            </td>
+            <td class="text-center">{{ score_badge(h.legal_score) }}</td>
             <td>{{ h.recommendation }}</td>
           </tr>
           {% endfor %}

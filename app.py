@@ -4,7 +4,7 @@ from modules.legal_scoring import bp as legal_bp
 from modules.attorney_placements import bp as placements_bp
 
 app = Flask(__name__)
-app.secret_key = "pra-legal-scoring-2024"
+app.secret_key = "pra-legal-recovery-2024"
 app.register_blueprint(legal_bp)
 app.register_blueprint(placements_bp)
 
