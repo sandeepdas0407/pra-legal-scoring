@@ -2,7 +2,11 @@ import sqlite3
 import json
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "legal_scoring.db")
+# On Azure App Service (Linux) WEBSITE_INSTANCE_ID is set; use /home for persistence
+if os.environ.get("WEBSITE_INSTANCE_ID"):
+    DB_PATH = "/home/legal_scoring.db"
+else:
+    DB_PATH = os.path.join(os.path.dirname(__file__), "legal_scoring.db")
 
 
 def get_db():
