@@ -35,6 +35,18 @@
           </div>
         </div>
 
+        <!-- Legal Eligibility dropdown -->
+        <div class="nav-group {% if request.endpoint and request.endpoint.startswith('eligibility.') %}nav-group-active{% endif %}">
+          <span class="nav-group-label">Legal Eligibility ▾</span>
+          <div class="dropdown-menu">
+            <a href="{{ url_for('eligibility.eligibility_dashboard') }}"
+               class="dropdown-item {% if request.endpoint == 'eligibility.eligibility_dashboard' %}active{% endif %}">Dashboard</a>
+            <div class="dropdown-divider"></div>
+            <a href="{{ url_for('eligibility.new_run') }}"
+               class="dropdown-item dropdown-item-cta {% if request.endpoint == 'eligibility.new_run' %}active{% endif %}">+ New Eligibility Run</a>
+          </div>
+        </div>
+
         <!-- Attorney Placements dropdown -->
         <div class="nav-group {% if request.endpoint and request.endpoint.startswith('placements.') %}nav-group-active{% endif %}">
           <span class="nav-group-label">Attorney Placements ▾</span>

@@ -140,12 +140,53 @@ def init_db():
             VALUES (?,?,?,?,?,?)
         """, sample_attorneys)
 
+    # ── Eligibility tables ────────────────────────────────────────────────────
+    cur.executescript("""
+        CREATE TABLE IF NOT EXISTS eligibility_runs (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_name       TEXT    NOT NULL,
+            min_frv        REAL    NOT NULL DEFAULT 500.0,
+            run_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            total_accounts INTEGER NOT NULL DEFAULT 0,
+            eligible_count INTEGER NOT NULL DEFAULT 0,
+            excluded_count INTEGER NOT NULL DEFAULT 0,
+            below_frv_count INTEGER NOT NULL DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS eligibility_results (
+            id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id                 INTEGER NOT NULL,
+            account_id             INTEGER NOT NULL,
+            frv                    REAL    NOT NULL,
+            gross_recovery_estimate REAL   NOT NULL,
+            legal_cost_estimate    REAL    NOT NULL,
+            recovery_probability   REAL    NOT NULL,
+            is_frv_eligible        INTEGER NOT NULL DEFAULT 0,
+            is_excluded            INTEGER NOT NULL DEFAULT 0,
+            exclusion_reasons      TEXT    NOT NULL DEFAULT '[]',
+            is_legal_eligible      INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (run_id)    REFERENCES eligibility_runs(id),
+            FOREIGN KEY (account_id) REFERENCES accounts(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_elig_results_run     ON eligibility_results(run_id);
+        CREATE INDEX IF NOT EXISTS idx_elig_results_account ON eligibility_results(account_id);
+    """)
+
     # Migrate: add rule_id column to score_results if not present
     try:
         cur.execute("ALTER TABLE score_results ADD COLUMN rule_id INTEGER")
         conn.commit()
     except sqlite3.OperationalError:
         pass  # column already exists
+
+    # Migrate: add exclusion flag columns to accounts if not present
+    for col in ('is_bankruptcy', 'is_sol_expired', 'is_disputed', 'is_military', 'is_deceased'):
+        try:
+            cur.execute(f"ALTER TABLE accounts ADD COLUMN {col} INTEGER NOT NULL DEFAULT 0")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass  # column already exists
 
     conn.commit()
     conn.close()
@@ -180,10 +221,19 @@ def create_account(data):
     cur.execute("""
         INSERT INTO accounts
         (account_number, debtor_name, debt_amount, debt_age_days,
-         credit_score, employment_status, owns_assets, prior_payment, state)
+         credit_score, employment_status, owns_assets, prior_payment, state,
+         is_bankruptcy, is_sol_expired, is_disputed, is_military, is_deceased)
         VALUES (:account_number, :debtor_name, :debt_amount, :debt_age_days,
-                :credit_score, :employment_status, :owns_assets, :prior_payment, :state)
-    """, data)
+                :credit_score, :employment_status, :owns_assets, :prior_payment, :state,
+                :is_bankruptcy, :is_sol_expired, :is_disputed, :is_military, :is_deceased)
+    """, {
+        **data,
+        'is_bankruptcy':  data.get('is_bankruptcy', 0),
+        'is_sol_expired': data.get('is_sol_expired', 0),
+        'is_disputed':    data.get('is_disputed', 0),
+        'is_military':    data.get('is_military', 0),
+        'is_deceased':    data.get('is_deceased', 0),
+    })
     conn.commit()
     account_id = cur.lastrowid
     conn.close()
@@ -265,3 +315,148 @@ def get_rules_history():
     ).fetchall()
     conn.close()
     return rows
+
+
+# ── Eligibility helpers ───────────────────────────────────────────────────────
+
+def get_eligible_accounts_for_placement():
+    """
+    Return accounts that are legal eligible from the most recent eligibility run
+    and do not currently have an active attorney placement, ordered by FRV desc.
+    """
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT a.*,
+               er.frv,
+               er.recovery_probability,
+               er.gross_recovery_estimate,
+               er.legal_cost_estimate,
+               sr.legal_score,
+               sr.recommendation,
+               run.run_name,
+               run.run_at
+        FROM eligibility_results er
+        JOIN eligibility_runs run ON run.id = er.run_id
+        JOIN accounts a ON a.id = er.account_id
+        LEFT JOIN (
+            SELECT account_id, legal_score, recommendation
+            FROM score_results
+            WHERE id IN (SELECT MAX(id) FROM score_results GROUP BY account_id)
+        ) sr ON sr.account_id = a.id
+        WHERE er.run_id = (SELECT MAX(id) FROM eligibility_runs)
+          AND er.is_legal_eligible = 1
+          AND a.id NOT IN (
+              SELECT account_id FROM placements WHERE status IN ('Placed', 'Active')
+          )
+        ORDER BY er.frv DESC
+    """).fetchall()
+    conn.close()
+    return rows
+
+
+def get_active_placement_account_ids():
+    """Return a set of account IDs that have an active (Placed/Active) placement."""
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT DISTINCT account_id FROM placements
+        WHERE status IN ('Placed', 'Active')
+    """).fetchall()
+    conn.close()
+    return {row['account_id'] for row in rows}
+
+
+def create_eligibility_run(run_name, min_frv, total, eligible, excluded, below_frv):
+    """Insert a new eligibility run record and return its id."""
+    conn = get_db()
+    cur  = conn.cursor()
+    cur.execute("""
+        INSERT INTO eligibility_runs
+            (run_name, min_frv, total_accounts, eligible_count, excluded_count, below_frv_count)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (run_name, min_frv, total, eligible, excluded, below_frv))
+    conn.commit()
+    run_id = cur.lastrowid
+    conn.close()
+    return run_id
+
+
+def save_eligibility_results(run_id, results):
+    """Bulk-insert eligibility results for a run."""
+    conn = get_db()
+    conn.executemany("""
+        INSERT INTO eligibility_results
+            (run_id, account_id, frv, gross_recovery_estimate, legal_cost_estimate,
+             recovery_probability, is_frv_eligible, is_excluded, exclusion_reasons, is_legal_eligible)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, [
+        (
+            run_id,
+            r['account_id'],
+            r['frv'],
+            r['gross_recovery_estimate'],
+            r['legal_cost_estimate'],
+            r['recovery_probability'],
+            r['is_frv_eligible'],
+            r['is_excluded'],
+            json.dumps(r['exclusion_reasons']),
+            r['is_legal_eligible'],
+        )
+        for r in results
+    ])
+    conn.commit()
+    conn.close()
+
+
+def get_eligibility_runs():
+    """Return all eligibility runs, newest first."""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM eligibility_runs ORDER BY id DESC"
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def get_eligibility_run(run_id):
+    """Return a single eligibility run by id."""
+    conn = get_db()
+    row  = conn.execute(
+        "SELECT * FROM eligibility_runs WHERE id = ?", (run_id,)
+    ).fetchone()
+    conn.close()
+    return row
+
+
+def get_eligibility_results(run_id, tab='eligible'):
+    """
+    Return eligibility result rows joined with account details for a given run.
+    tab: 'eligible' | 'excluded' | 'below_frv' | 'all'
+    """
+    filters = {
+        'eligible':  "WHERE er.run_id = ? AND er.is_legal_eligible = 1",
+        'excluded':  "WHERE er.run_id = ? AND er.is_excluded = 1 AND er.is_frv_eligible = 1",
+        'below_frv': "WHERE er.run_id = ? AND er.is_frv_eligible = 0",
+        'all':       "WHERE er.run_id = ?",
+    }
+    where = filters.get(tab, filters['all'])
+
+    conn = get_db()
+    rows = conn.execute(f"""
+        SELECT er.*,
+               a.account_number, a.debtor_name, a.debt_amount, a.state,
+               a.credit_score, a.employment_status, a.owns_assets, a.prior_payment,
+               a.debt_age_days
+        FROM eligibility_results er
+        JOIN accounts a ON a.id = er.account_id
+        {where}
+        ORDER BY er.frv DESC
+    """, (run_id,)).fetchall()
+    conn.close()
+
+    # Parse exclusion_reasons JSON and attach as a list attribute
+    parsed = []
+    for row in rows:
+        d = dict(row)
+        d['exclusion_reasons_list'] = json.loads(d.get('exclusion_reasons') or '[]')
+        parsed.append(d)
+    return parsed

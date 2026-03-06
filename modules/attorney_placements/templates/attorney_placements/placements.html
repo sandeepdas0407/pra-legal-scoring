@@ -1,23 +1,23 @@
 {% extends "base.html" %}
-{% from "_macros.html" import placement_status_badge %}
+{% from "_macros.html" import placement_status_badge, score_badge, rec_pill %}
 {% block title %}Placements{% endblock %}
 
 {% block content %}
 <section class="page-hero">
   <div class="container">
     <a href="{{ url_for('landing') }}" class="back-link">← Home</a>
-    <h1 class="page-title">Placements</h1>
-    <p class="page-sub">Track all accounts placed with law firms.</p>
+    <h1 class="page-title">Attorney Placements</h1>
+    <p class="page-sub">Track placements and assign attorneys to legally eligible accounts.</p>
   </div>
 </section>
 
 <!-- Stats strip -->
 <div class="stats-strip">
   <div class="container">
-    <div class="stats-grid" style="grid-template-columns:repeat(7,1fr);">
+    <div class="stats-grid" style="grid-template-columns:repeat(8,1fr);">
       <div class="stat-card">
         <span class="stat-num">{{ stats.total }}</span>
-        <span class="stat-label">Total</span>
+        <span class="stat-label">Total Placed</span>
       </div>
       <div class="stat-card">
         <span class="stat-num" style="color:#60a5fa;">{{ stats.placed }}</span>
@@ -39,6 +39,10 @@
         <span class="stat-num" style="color:var(--low);">{{ stats.closed_no_recovery }}</span>
         <span class="stat-label">Closed/NR</span>
       </div>
+      <div class="stat-card stat-high">
+        <span class="stat-num">{{ eligible | length }}</span>
+        <span class="stat-label">Eligible / Unplaced</span>
+      </div>
       <div class="stat-card">
         <span class="stat-num" style="color:var(--high);">${{ "{:,.0f}".format(stats.total_recovered) }}</span>
         <span class="stat-label">Recovered</span>
@@ -49,12 +53,98 @@
 
 <section class="section">
   <div class="container">
-    <!-- Filter tabs -->
+
+    <!-- View toggle -->
+    <div class="tab-bar" style="margin-bottom:0;">
+      <a href="{{ url_for('placements.placements_list', view='eligible') }}"
+         class="tab-item {% if view == 'eligible' %}tab-active{% endif %}">
+        Eligible Accounts
+        {% if eligible %}
+        <span class="tab-count tab-count-high">{{ eligible | length }}</span>
+        {% endif %}
+      </a>
+      <a href="{{ url_for('placements.placements_list', view='placements') }}"
+         class="tab-item {% if view != 'eligible' %}tab-active{% endif %}">
+        All Placements
+        <span class="tab-count">{{ stats.total }}</span>
+      </a>
+    </div>
+
+    <!-- ── ELIGIBLE ACCOUNTS TAB ─────────────────────────────── -->
+    {% if view == 'eligible' %}
+
+    <div class="tab-desc tab-desc-eligible">
+      Accounts marked <strong>Legal Eligible</strong> from the most recent eligibility run that do not yet have an active attorney placement. Ranked by Forecasted Legal Recovery Value.
+      {% if eligible %}
+        {% set run_name = eligible[0].run_name %}
+        {% set run_at   = eligible[0].run_at[:10] %}
+        &nbsp;·&nbsp; Run: <strong>{{ run_name }}</strong> ({{ run_at }})
+      {% endif %}
+    </div>
+
+    {% if eligible %}
+    <div class="table-wrap" style="margin-top:1.5rem;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Account #</th>
+            <th>Debtor Name</th>
+            <th>Balance</th>
+            <th>State</th>
+            <th>Legal Score</th>
+            <th>Recovery Prob.</th>
+            <th>FRV</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for acct in eligible %}
+          <tr>
+            <td class="mono">{{ acct.account_number }}</td>
+            <td>{{ acct.debtor_name }}</td>
+            <td>${{ "{:,.2f}".format(acct.debt_amount) }}</td>
+            <td>{{ acct.state }}</td>
+            <td class="text-center">{{ score_badge(acct.legal_score) }}</td>
+            <td>{{ acct.recovery_probability }}%</td>
+            <td class="frv-positive">${{ "{:,.2f}".format(acct.frv) }}</td>
+            <td>
+              <a href="{{ url_for('placements.placement_new', account_id=acct.id) }}"
+                 class="btn-place">Place Attorney →</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="margin-top:1.5rem;">
+      {% if eligible is defined %}
+        <p>No unplaced eligible accounts found.</p>
+        <p style="margin-top:8px;">
+          <a href="{{ url_for('eligibility.new_run') }}">Run an eligibility check</a> to identify accounts ready for placement.
+        </p>
+      {% else %}
+        <p>No eligibility runs have been completed yet.</p>
+        <p style="margin-top:8px;">
+          <a href="{{ url_for('eligibility.new_run') }}">Run an eligibility check</a> first.
+        </p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ── ALL PLACEMENTS TAB ────────────────────────────────── -->
+    {% else %}
+
+    <div class="tab-desc" style="margin-bottom:1.5rem;">
+      All accounts currently placed with attorneys. Use the filters below to narrow by status.
+    </div>
+
+    <!-- Status filter tabs -->
     <div class="filter-tabs">
-      <a href="{{ url_for('placements.placements_list') }}"
+      <a href="{{ url_for('placements.placements_list', view='placements') }}"
          class="filter-tab {{ 'filter-tab-active' if not current_filter }}">All</a>
       {% for s in statuses %}
-      <a href="{{ url_for('placements.placements_list', status=s) }}"
+      <a href="{{ url_for('placements.placements_list', view='placements', status=s) }}"
          class="filter-tab {{ 'filter-tab-active' if current_filter == s }}">{{ s }}</a>
       {% endfor %}
     </div>
@@ -90,6 +180,9 @@
       <p>No placements{% if current_filter %} with status "{{ current_filter }}"{% endif %}.</p>
     </div>
     {% endif %}
+
+    {% endif %}
+
   </div>
 </section>
 {% endblock %}

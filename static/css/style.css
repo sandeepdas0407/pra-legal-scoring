@@ -1633,3 +1633,450 @@ a:hover { text-decoration: underline; }
   .dropdown-menu { left: 0; transform: none; }
   .dropdown-menu::before { left: 20px; transform: none; }
 }
+
+/* ── Result Page — Eligibility & Placement Panel ────── */
+
+.elig-stage-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 12px;
+  background: rgba(255,255,255,0.02);
+}
+
+.elig-stage-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.elig-stage-hdr-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.elig-stage-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--white);
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.elig-stage-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--off-white);
+}
+
+/* FRV grid */
+.elig-frv-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.elig-frv-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.elig-frv-cell-total {
+  border-color: rgba(30,111,184,0.4);
+  background: rgba(30,111,184,0.07);
+}
+
+.elig-frv-lbl {
+  font-size: 0.72rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.elig-frv-val {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.text-low { color: var(--low); }
+
+/* Stage notes */
+.elig-stage-note {
+  font-size: 0.82rem;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+}
+
+.elig-stage-note-ok   { color: var(--high);   background: var(--high-bg); }
+.elig-stage-note-fail { color: var(--medium);  background: var(--medium-bg); }
+
+/* Exclusion tags container */
+.elig-excl-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Verdict block */
+.elig-verdict-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  margin-top: 12px;
+  border: 1px solid;
+}
+
+.elig-verdict-block-yes {
+  background: var(--high-bg);
+  border-color: rgba(34,197,94,0.35);
+}
+
+.elig-verdict-block-no {
+  background: var(--low-bg);
+  border-color: rgba(239,68,68,0.35);
+}
+
+.elig-verdict-icon-lg {
+  font-size: 1.4rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.elig-verdict-block-yes .elig-verdict-icon-lg { color: var(--high); }
+.elig-verdict-block-no  .elig-verdict-icon-lg { color: var(--low); }
+
+.elig-verdict-title {
+  font-size: 0.95rem;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.elig-verdict-block-yes .elig-verdict-title { color: var(--high); }
+.elig-verdict-block-no  .elig-verdict-title { color: var(--low); }
+
+.elig-verdict-desc {
+  font-size: 0.85rem;
+  color: var(--gray-light);
+  line-height: 1.55;
+}
+
+.placement-history-hdr {
+  font-size: .85rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-top: 1.5rem;
+  margin-bottom: .75rem;
+}
+
+@media (max-width: 700px) {
+  .elig-frv-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Place attorney button in eligible accounts table */
+.btn-place {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--white);
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.btn-place:hover { background: var(--accent-lt); color: var(--white); text-decoration: none; }
+
+/* ── Legal Eligibility Module ───────────────────────── */
+
+/* Process flow diagram */
+.process-flow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin-top: 40px;
+  flex-wrap: wrap;
+}
+
+.process-step {
+  flex: 1;
+  min-width: 200px;
+  background: var(--navy-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.process-step-output {
+  border-color: var(--high);
+  background: rgba(34,197,94,0.06);
+}
+
+.process-step-num {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--white);
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.process-step-num-out {
+  background: var(--high);
+  font-size: 1.2rem;
+}
+
+.process-step-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.process-step-desc {
+  font-size: 0.875rem;
+  color: var(--gray-light);
+  line-height: 1.6;
+}
+
+.process-step-note {
+  font-size: 0.8rem;
+  color: var(--gray);
+  font-style: italic;
+}
+
+.process-formula {
+  background: rgba(30,111,184,0.12);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-family: 'Courier New', monospace;
+  color: var(--accent-lt);
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
+.process-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  font-size: 1.8rem;
+  color: var(--gray);
+  margin-top: 40px;
+  flex-shrink: 0;
+}
+
+.exclusion-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+}
+
+.exclusion-list li {
+  font-size: 0.82rem;
+  color: var(--gray-light);
+  padding-left: 16px;
+  position: relative;
+}
+
+.exclusion-list li::before {
+  content: '✕';
+  position: absolute;
+  left: 0;
+  color: var(--low);
+  font-size: 0.7rem;
+  font-weight: 700;
+  top: 1px;
+}
+
+/* Eligibility count badges */
+.elig-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.elig-eligible { background: var(--high-bg);   color: var(--high); }
+.elig-excluded  { background: var(--low-bg);    color: var(--low); }
+.elig-below     { background: var(--medium-bg); color: var(--medium); }
+
+/* Eligibility status pills */
+.elig-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.elig-pill-yes      { background: var(--high-bg);   color: var(--high); }
+.elig-pill-excluded { background: var(--low-bg);    color: var(--low); }
+.elig-pill-no       { background: var(--medium-bg); color: var(--medium); }
+
+/* FRV value colouring in table */
+.frv-positive { color: var(--high);   font-weight: 600; }
+.frv-negative { color: var(--low);    font-weight: 600; }
+
+/* Stage pass/fail indicators */
+.stage-pass { color: var(--high);   font-weight: 700; font-size: 0.8rem; }
+.stage-fail { color: var(--low);    font-weight: 700; font-size: 0.8rem; }
+
+/* Exclusion reason tags */
+.excl-tag {
+  display: inline-block;
+  background: var(--low-bg);
+  color: var(--low);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin: 1px;
+  white-space: nowrap;
+}
+
+.text-muted { color: var(--gray); }
+
+/* Tab bar */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+
+.tab-item {
+  padding: 10px 18px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-light);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tab-item:hover { color: var(--white); text-decoration: none; }
+
+.tab-active {
+  color: var(--white);
+  border-bottom-color: var(--accent);
+}
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(255,255,255,0.08);
+  color: var(--gray-light);
+}
+
+.tab-count-high   { background: var(--high-bg);   color: var(--high); }
+.tab-count-low    { background: var(--low-bg);    color: var(--low); }
+.tab-count-medium { background: var(--medium-bg); color: var(--medium); }
+
+/* Tab description banner */
+.tab-desc {
+  padding: 12px 18px;
+  border-radius: 0 0 var(--radius) var(--radius);
+  font-size: 0.875rem;
+  color: var(--gray-light);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-top: none;
+}
+
+.tab-desc-eligible  { border-color: rgba(34,197,94,0.25);  background: rgba(34,197,94,0.05); }
+.tab-desc-excluded  { border-color: rgba(239,68,68,0.25);  background: rgba(239,68,68,0.05); }
+.tab-desc-below     { border-color: rgba(245,158,11,0.25); background: rgba(245,158,11,0.05); }
+
+/* New run form extras */
+.form-section-desc {
+  font-size: 0.875rem;
+  color: var(--gray-light);
+  margin-bottom: 16px;
+  margin-top: -8px;
+}
+
+.form-row-checks {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.run-summary-box {
+  background: rgba(30,111,184,0.06);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.run-steps-list {
+  padding-left: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: var(--gray-light);
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+.run-steps-list li strong { color: var(--white); }
+
+.run-steps-list code {
+  background: rgba(30,111,184,0.15);
+  color: var(--accent-lt);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-family: 'Courier New', monospace;
+}
+
+@media (max-width: 900px) {
+  .process-flow   { flex-direction: column; }
+  .process-arrow  { transform: rotate(90deg); margin: 0 auto; }
+}

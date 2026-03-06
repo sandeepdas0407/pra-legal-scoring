@@ -8,6 +8,11 @@ from .scoring_engine import score_account, get_default_rules
 from modules.attorney_placements.db import (
     get_active_placement_for_account, get_placements_for_account,
 )
+from modules.legal_eligibility.eligibility_engine import (
+    forecast_legal_recovery_value, check_exclusions,
+)
+
+_MIN_FRV = 500.0
 from modules.constants import US_STATES
 from . import bp
 
@@ -66,6 +71,11 @@ def new_score():
                 "owns_assets":       1 if request.form.get("owns_assets") == "1" else 0,
                 "prior_payment":     1 if request.form.get("prior_payment") == "1" else 0,
                 "state":             request.form["state"],
+                "is_bankruptcy":     1 if request.form.get("is_bankruptcy") == "1" else 0,
+                "is_sol_expired":    1 if request.form.get("is_sol_expired") == "1" else 0,
+                "is_disputed":       1 if request.form.get("is_disputed") == "1" else 0,
+                "is_military":       1 if request.form.get("is_military") == "1" else 0,
+                "is_deceased":       1 if request.form.get("is_deceased") == "1" else 0,
             }
 
             if not (300 <= data["credit_score"] <= 850):
@@ -117,9 +127,23 @@ def result(account_id):
 
     active_placement = get_active_placement_for_account(account_id)
     all_placements   = get_placements_for_account(account_id)
+
+    # Inline eligibility assessment for this account
+    acct_dict   = dict(account)
+    frv_data    = forecast_legal_recovery_value(acct_dict)
+    excl        = check_exclusions(acct_dict, has_active_placement=bool(active_placement))
+    eligibility = {
+        **frv_data,
+        'is_frv_eligible':   frv_data['frv'] >= _MIN_FRV,
+        'is_excluded':       excl['is_excluded'],
+        'exclusion_reasons': excl['exclusion_reasons'],
+        'is_legal_eligible': frv_data['frv'] >= _MIN_FRV and not excl['is_excluded'],
+        'min_frv':           _MIN_FRV,
+    }
+
     return render_template("legal_scoring/result.html", account=account, result=result_data,
                            history=history, active_placement=active_placement,
-                           all_placements=all_placements)
+                           all_placements=all_placements, eligibility=eligibility)
 
 
 @bp.route("/score/existing/<int:account_id>", methods=["POST"])

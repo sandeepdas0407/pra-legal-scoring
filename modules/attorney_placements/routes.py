@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify
-from database import get_account, get_score_history
+from database import get_account, get_score_history, get_eligible_accounts_for_placement
 from .db import (
     get_all_attorneys, get_attorney, create_attorney, update_attorney,
     deactivate_attorney, get_attorneys_for_state,
@@ -108,12 +108,15 @@ def attorney_suggest():
 
 @bp.route("/")
 def placements_list():
+    view          = request.args.get("view", "placements")
     status_filter = request.args.get("status")
-    placements = get_all_placements(status_filter)
-    stats = get_placement_stats()
-    return render_template("attorney_placements/placements.html", placements=placements,
-                           stats=stats, statuses=PLACEMENT_STATUSES,
-                           current_filter=status_filter)
+    placements    = get_all_placements(status_filter)
+    stats         = get_placement_stats()
+    eligible      = get_eligible_accounts_for_placement()
+    return render_template("attorney_placements/placements.html",
+                           placements=placements, stats=stats,
+                           statuses=PLACEMENT_STATUSES, current_filter=status_filter,
+                           eligible=eligible, view=view)
 
 
 @bp.route("/new", methods=["GET", "POST"])

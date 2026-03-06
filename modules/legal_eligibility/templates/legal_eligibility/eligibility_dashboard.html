@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Legal Eligibility{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+  <div class="container">
+    <a href="{{ url_for('legal.dashboard') }}" class="back-link">← Legal Scoring</a>
+    <h1 class="page-title">Legal Eligibility</h1>
+    <p class="page-sub">Two-stage process: accounts are first scored by Forecasted Legal Recovery Value, then filtered by mandatory exclusions to produce the Legal Eligible Accounts List.</p>
+  </div>
+</section>
+
+<!-- PROCESS FLOW EXPLAINER -->
+<section class="section section-dark">
+  <div class="container">
+    <h2 class="section-title text-center">Eligibility Process Flow</h2>
+    <p class="section-sub text-center">Every account passes through two sequential gates before appearing on the eligible list.</p>
+    <div class="process-flow">
+
+      <div class="process-step">
+        <div class="process-step-num">1</div>
+        <div class="process-step-body">
+          <h3 class="process-step-title">Eligibility Scoring</h3>
+          <p class="process-step-desc">Calculate the <strong>Forecasted Legal Recovery Value (FRV)</strong> for each account.</p>
+          <div class="process-formula">
+            FRV = (Balance × Recovery Probability) − Legal Cost Estimate
+          </div>
+          <p class="process-step-note">Accounts where FRV &ge; the configured minimum threshold pass this stage.</p>
+        </div>
+      </div>
+
+      <div class="process-arrow">→</div>
+
+      <div class="process-step">
+        <div class="process-step-num">2</div>
+        <div class="process-step-body">
+          <h3 class="process-step-title">Exclusion Filtering</h3>
+          <p class="process-step-desc">Apply mandatory exclusion rules that disqualify accounts regardless of FRV.</p>
+          <ul class="exclusion-list">
+            <li>Active attorney placement</li>
+            <li>Bankruptcy filed</li>
+            <li>Statute of limitations expired</li>
+            <li>Account disputed</li>
+            <li>Military / SCRA protection</li>
+            <li>Deceased debtor</li>
+            <li>Debt below minimum ($500)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="process-arrow">→</div>
+
+      <div class="process-step process-step-output">
+        <div class="process-step-num process-step-num-out">✓</div>
+        <div class="process-step-body">
+          <h3 class="process-step-title">Legal Eligible List</h3>
+          <p class="process-step-desc">Accounts that pass both stages — positive FRV and no active exclusions — are added to the Legal Eligible Accounts List.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- RUNS LIST -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Eligibility Runs</h2>
+      <a href="{{ url_for('eligibility.new_run') }}" class="btn-primary">+ New Eligibility Run</a>
+    </div>
+
+    {% if runs %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Run Name</th>
+            <th>Date</th>
+            <th>Min FRV</th>
+            <th>Total Accounts</th>
+            <th class="text-center">Legal Eligible</th>
+            <th class="text-center">Excluded</th>
+            <th class="text-center">Below FRV</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for run in runs %}
+          <tr>
+            <td><strong>{{ run.run_name }}</strong></td>
+            <td>{{ run.run_at[:16] }}</td>
+            <td>${{ "{:,.0f}".format(run.min_frv) }}</td>
+            <td>{{ run.total_accounts }}</td>
+            <td class="text-center">
+              <span class="elig-badge elig-eligible">{{ run.eligible_count }}</span>
+            </td>
+            <td class="text-center">
+              <span class="elig-badge elig-excluded">{{ run.excluded_count }}</span>
+            </td>
+            <td class="text-center">
+              <span class="elig-badge elig-below">{{ run.below_frv_count }}</span>
+            </td>
+            <td>
+              <a href="{{ url_for('eligibility.run_results', run_id=run.id) }}" class="tbl-link">View Results →</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <p>No eligibility runs yet. <a href="{{ url_for('eligibility.new_run') }}">Run your first eligibility check</a>.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}New Eligibility Run{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+  <div class="container">
+    <a href="{{ url_for('eligibility.eligibility_dashboard') }}" class="back-link">← Eligibility Dashboard</a>
+    <h1 class="page-title">New Eligibility Run</h1>
+    <p class="page-sub">Configure and execute a two-stage eligibility check across all accounts in the portfolio.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container form-container">
+    <form method="POST" action="{{ url_for('eligibility.new_run') }}">
+
+      <!-- Run Configuration -->
+      <div class="form-section">
+        <h2 class="form-section-title">Run Configuration</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="run_name">Run Name <span class="req">*</span></label>
+            <input type="text" id="run_name" name="run_name"
+                   placeholder="e.g. Q1 2026 Eligibility Review"
+                   required />
+            <span class="field-hint">A descriptive label for this eligibility run.</span>
+          </div>
+          <div class="form-group">
+            <label for="min_frv">Minimum FRV Threshold ($) <span class="req">*</span></label>
+            <input type="number" id="min_frv" name="min_frv"
+                   value="500" min="0" step="50" required />
+            <span class="field-hint">
+              Accounts whose Forecasted Legal Recovery Value falls below this amount are ineligible (Stage 1 filter).
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- What this run will do -->
+      <div class="form-section run-summary-box">
+        <h2 class="form-section-title">What This Run Does</h2>
+        <ol class="run-steps-list">
+          <li>
+            <strong>Stage 1 — FRV Scoring</strong><br/>
+            For every account, compute:<br/>
+            <code>FRV = (Balance &times; Recovery Probability) &minus; Legal Cost</code><br/>
+            Recovery probability is derived from credit score, employment status, asset ownership, prior payment, and debt age. Accounts where FRV &ge; the threshold above pass Stage 1.
+          </li>
+          <li>
+            <strong>Stage 2 — Exclusion Filtering</strong><br/>
+            Accounts are checked against all mandatory exclusions:
+            active attorney placement, bankruptcy, statute of limitations expiry,
+            disputed status, military / SCRA protection, deceased debtor,
+            and debt below $500. Any single exclusion disqualifies the account.
+          </li>
+          <li>
+            <strong>Output — Legal Eligible List</strong><br/>
+            Accounts that pass both stages are marked <em>Legal Eligible</em> and shown on the results list, ready for attorney placement or further action.
+          </li>
+        </ol>
+      </div>
+
+      <div class="form-actions">
+        <a href="{{ url_for('eligibility.eligibility_dashboard') }}" class="btn-ghost">Cancel</a>
+        <button type="submit" class="btn-primary">Run Eligibility Check</button>
+      </div>
+
+    </form>
+  </div>
+</section>
+
+{% endblock %}

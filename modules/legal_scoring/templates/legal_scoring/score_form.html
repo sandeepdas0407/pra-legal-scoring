@@ -141,6 +141,69 @@
         </div>
       </div>
 
+      <!-- SECTION: Exclusion Flags -->
+      <div class="form-section">
+        <h2 class="form-section-title">Exclusion Flags</h2>
+        <p class="form-section-desc">Check any conditions that apply. Flagged accounts will be excluded from the Legal Eligible Accounts List regardless of score.</p>
+        <div class="form-row form-row-checks">
+          <div class="form-group form-group-check">
+            <label class="check-label">
+              <input type="hidden" name="is_bankruptcy" value="0" />
+              <input type="checkbox" name="is_bankruptcy" value="1"
+                     {% if form.get('is_bankruptcy') == '1' %}checked{% endif %} />
+              <span class="check-text">
+                <strong>Bankruptcy Filed</strong>
+                <small>Active or recent bankruptcy petition on file</small>
+              </span>
+            </label>
+          </div>
+          <div class="form-group form-group-check">
+            <label class="check-label">
+              <input type="hidden" name="is_sol_expired" value="0" />
+              <input type="checkbox" name="is_sol_expired" value="1"
+                     {% if form.get('is_sol_expired') == '1' %}checked{% endif %} />
+              <span class="check-text">
+                <strong>Statute of Limitations Expired</strong>
+                <small>Debt is past the state's SOL for legal action</small>
+              </span>
+            </label>
+          </div>
+          <div class="form-group form-group-check">
+            <label class="check-label">
+              <input type="hidden" name="is_disputed" value="0" />
+              <input type="checkbox" name="is_disputed" value="1"
+                     {% if form.get('is_disputed') == '1' %}checked{% endif %} />
+              <span class="check-text">
+                <strong>Account Disputed</strong>
+                <small>Debtor has filed a formal dispute on this debt</small>
+              </span>
+            </label>
+          </div>
+          <div class="form-group form-group-check">
+            <label class="check-label">
+              <input type="hidden" name="is_military" value="0" />
+              <input type="checkbox" name="is_military" value="1"
+                     {% if form.get('is_military') == '1' %}checked{% endif %} />
+              <span class="check-text">
+                <strong>Military / SCRA Protection</strong>
+                <small>Debtor is on active military duty (SCRA applies)</small>
+              </span>
+            </label>
+          </div>
+          <div class="form-group form-group-check">
+            <label class="check-label">
+              <input type="hidden" name="is_deceased" value="0" />
+              <input type="checkbox" name="is_deceased" value="1"
+                     {% if form.get('is_deceased') == '1' %}checked{% endif %} />
+              <span class="check-text">
+                <strong>Deceased Debtor</strong>
+                <small>Debtor is deceased; estate proceedings may apply</small>
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+
       <!-- LIVE PREVIEW -->
       <div class="score-preview" id="scorePreview">
         <div class="preview-label">Estimated Score</div>

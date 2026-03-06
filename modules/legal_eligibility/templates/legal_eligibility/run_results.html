@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Eligibility Results — {{ run.run_name }}{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+  <div class="container">
+    <a href="{{ url_for('eligibility.eligibility_dashboard') }}" class="back-link">← Eligibility Dashboard</a>
+    <h1 class="page-title">{{ run.run_name }}</h1>
+    <p class="page-sub">Run on {{ run.run_at[:16] }} &nbsp;·&nbsp; Min FRV: ${{ "{:,.0f}".format(run.min_frv) }}</p>
+  </div>
+</section>
+
+<!-- SUMMARY STATS -->
+<section class="stats-strip">
+  <div class="container stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="stat-card">
+      <span class="stat-num">{{ run.total_accounts }}</span>
+      <span class="stat-label">Total Accounts</span>
+    </div>
+    <div class="stat-card stat-high">
+      <span class="stat-num">{{ run.eligible_count }}</span>
+      <span class="stat-label">Legal Eligible</span>
+    </div>
+    <div class="stat-card stat-low">
+      <span class="stat-num">{{ run.excluded_count }}</span>
+      <span class="stat-label">Excluded (FRV passed)</span>
+    </div>
+    <div class="stat-card stat-medium">
+      <span class="stat-num">{{ run.below_frv_count }}</span>
+      <span class="stat-label">Below FRV Threshold</span>
+    </div>
+  </div>
+</section>
+
+<!-- TABS -->
+<section class="section">
+  <div class="container">
+
+    <div class="tab-bar">
+      <a href="{{ url_for('eligibility.run_results', run_id=run.id, tab='eligible') }}"
+         class="tab-item {% if tab == 'eligible' %}tab-active{% endif %}">
+        Legal Eligible
+        <span class="tab-count tab-count-high">{{ run.eligible_count }}</span>
+      </a>
+      <a href="{{ url_for('eligibility.run_results', run_id=run.id, tab='excluded') }}"
+         class="tab-item {% if tab == 'excluded' %}tab-active{% endif %}">
+        Excluded
+        <span class="tab-count tab-count-low">{{ run.excluded_count }}</span>
+      </a>
+      <a href="{{ url_for('eligibility.run_results', run_id=run.id, tab='below_frv') }}"
+         class="tab-item {% if tab == 'below_frv' %}tab-active{% endif %}">
+        Below FRV Threshold
+        <span class="tab-count tab-count-medium">{{ run.below_frv_count }}</span>
+      </a>
+      <a href="{{ url_for('eligibility.run_results', run_id=run.id, tab='all') }}"
+         class="tab-item {% if tab == 'all' %}tab-active{% endif %}">
+        All Accounts
+        <span class="tab-count">{{ run.total_accounts }}</span>
+      </a>
+    </div>
+
+    <!-- Tab descriptions -->
+    {% if tab == 'eligible' %}
+    <div class="tab-desc tab-desc-eligible">
+      These accounts passed both eligibility stages: FRV &ge; ${{ "{:,.0f}".format(run.min_frv) }} AND no active exclusions. They are ready for attorney placement or legal action.
+    </div>
+    {% elif tab == 'excluded' %}
+    <div class="tab-desc tab-desc-excluded">
+      These accounts would have passed the FRV threshold but are disqualified by one or more mandatory exclusions. Resolve the exclusion to make them eligible.
+    </div>
+    {% elif tab == 'below_frv' %}
+    <div class="tab-desc tab-desc-below">
+      These accounts have a Forecasted Legal Recovery Value below ${{ "{:,.0f}".format(run.min_frv) }}, meaning litigation costs are expected to exceed recovery. Legal action is not recommended.
+    </div>
+    {% else %}
+    <div class="tab-desc">
+      All accounts evaluated in this run. Use the tabs above to filter by outcome.
+    </div>
+    {% endif %}
+
+    {% if results %}
+    <div class="table-wrap" style="margin-top: 1.5rem;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Account #</th>
+            <th>Debtor Name</th>
+            <th>Balance</th>
+            <th>State</th>
+            <th>Recovery Prob.</th>
+            <th>Gross Recovery Est.</th>
+            <th>Legal Cost Est.</th>
+            <th>FRV</th>
+            {% if tab == 'all' %}<th>Stage 1</th><th>Stage 2</th>{% endif %}
+            {% if tab in ('excluded', 'all') %}<th>Exclusion Reasons</th>{% endif %}
+            <th>Eligibility</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in results %}
+          <tr>
+            <td class="mono">{{ r.account_number }}</td>
+            <td>{{ r.debtor_name }}</td>
+            <td>${{ "{:,.2f}".format(r.debt_amount) }}</td>
+            <td>{{ r.state }}</td>
+            <td>{{ r.recovery_probability }}%</td>
+            <td>${{ "{:,.2f}".format(r.gross_recovery_estimate) }}</td>
+            <td>${{ "{:,.2f}".format(r.legal_cost_estimate) }}</td>
+            <td class="{% if r.frv >= run.min_frv %}frv-positive{% else %}frv-negative{% endif %}">
+              ${{ "{:,.2f}".format(r.frv) }}
+            </td>
+            {% if tab == 'all' %}
+            <td>
+              {% if r.is_frv_eligible %}
+              <span class="stage-pass">Pass</span>
+              {% else %}
+              <span class="stage-fail">Fail</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if not r.is_excluded %}
+              <span class="stage-pass">Pass</span>
+              {% else %}
+              <span class="stage-fail">Fail</span>
+              {% endif %}
+            </td>
+            {% endif %}
+            {% if tab in ('excluded', 'all') %}
+            <td>
+              {% set reasons = r.exclusion_reasons_list %}
+              {% if reasons %}
+                {% for reason in reasons %}
+                <span class="excl-tag">{{ reason }}</span>
+                {% endfor %}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            {% endif %}
+            <td>
+              {% if r.is_legal_eligible %}
+              <span class="elig-pill elig-pill-yes">Legal Eligible</span>
+              {% elif r.is_excluded %}
+              <span class="elig-pill elig-pill-excluded">Excluded</span>
+              {% else %}
+              <span class="elig-pill elig-pill-no">Below FRV</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('legal.result', account_id=r.account_id) }}" class="tbl-link">View →</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="margin-top: 1.5rem;">
+      <p>No accounts in this category for this run.</p>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+
+<div class="container form-actions" style="padding-bottom: 3rem;">
+  <a href="{{ url_for('eligibility.eligibility_dashboard') }}" class="btn-ghost">← All Runs</a>
+  <a href="{{ url_for('eligibility.new_run') }}" class="btn-primary">+ New Run</a>
+</div>
+
+{% endblock %}
